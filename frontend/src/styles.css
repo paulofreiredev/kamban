@@ -1,0 +1,3 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; font-family: Inter, Arial, sans-serif; }
+button { background: #2456ff; color: #fff; border: none; }

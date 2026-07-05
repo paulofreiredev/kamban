@@ -1,0 +1,321 @@
+package handlers
+
+import (
+	"mime"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"kamban/backend/internal/middleware"
+	"kamban/backend/internal/models"
+	"kamban/backend/internal/storage"
+
+	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+)
+
+type CardHandler struct {
+	DB      *gorm.DB
+	Storage storage.Provider
+}
+
+type createCardRequest struct {
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Status      models.CardStatus `json:"status"`
+	AssigneeID  *uint             `json:"assigneeId"`
+}
+
+type updateCardRequest struct {
+	Title       *string            `json:"title"`
+	Description *string            `json:"description"`
+	Status      *models.CardStatus `json:"status"`
+	AssigneeID  *uint              `json:"assigneeId"`
+	Justification *string          `json:"justification"`
+}
+
+type createCommentRequest struct {
+	Content string `json:"content"`
+}
+
+func isValidStatus(s models.CardStatus) bool {
+	switch s {
+	case models.StatusBacklog, models.StatusTodo, models.StatusInProgress, models.StatusInReview, models.StatusDone, models.StatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
+func (h *CardHandler) List(c *fiber.Ctx) error {
+	fromStr := c.Query("from")
+	toStr := c.Query("to")
+	assigneeIdStr := c.Query("assigneeId")
+	to := time.Now()
+	from := to.AddDate(0, 0, -30)
+	var err error
+	if fromStr != "" {
+		from, err = time.Parse("2006-01-02", fromStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid from date"})
+		}
+	}
+	if toStr != "" {
+		to, err = time.Parse("2006-01-02", toStr)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid to date"})
+		}
+		to = to.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+	}
+	if from.After(to) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "from must be <= to"})
+	}
+
+	query := h.DB.
+		Preload("Assignee").
+		Preload("CreatedBy").
+		Where("created_at BETWEEN ? AND ?", from, to)
+	
+	if assigneeIdStr != "" && assigneeIdStr != "0" {
+		query = query.Where("assignee_id = ?", assigneeIdStr)
+	}
+
+	var cards []models.Card
+	if err := query.Order("created_at desc").Find(&cards).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not list cards"})
+	}
+
+	return c.JSON(cards)
+}
+
+func (h *CardHandler) GetByID(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var card models.Card
+	if err := h.DB.
+		Preload("Assignee").
+		Preload("CreatedBy").
+		Preload("Comments").
+		Preload("Comments.Author").
+		Preload("Attachments").
+		Preload("Attachments.Uploader").
+		First(&card, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
+	}
+	return c.JSON(card)
+}
+
+func (h *CardHandler) Create(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	var req createCardRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
+	}
+	if strings.TrimSpace(req.Title) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "title is required"})
+	}
+	if req.Status == "" {
+		req.Status = models.StatusBacklog
+	}
+	if !isValidStatus(req.Status) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid status"})
+	}
+	if req.AssigneeID != nil {
+		var assignee models.User
+		if err := h.DB.First(&assignee, *req.AssigneeID).Error; err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid assignee"})
+		}
+	}
+
+	// Fetch names for denormalized storage
+	assigneeName := ""
+	if req.AssigneeID != nil {
+		var a models.User
+		h.DB.First(&a, *req.AssigneeID)
+		assigneeName = a.Name
+	}
+	var creator models.User
+	createdByName := ""
+	if err := h.DB.First(&creator, claims.UserID).Error; err == nil {
+		createdByName = creator.Name
+	}
+
+	now := time.Now()
+	creatorID := claims.UserID
+	card := models.Card{
+		Title:           req.Title,
+		Description:     req.Description,
+		Status:          req.Status,
+		StatusChangedAt: &now,
+		AssigneeID:      req.AssigneeID,
+		AssigneeName:    assigneeName,
+		CreatedByID:     &creatorID,
+		CreatedByName:   createdByName,
+	}
+	if err := h.DB.Create(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not create card"})
+	}
+
+	if err := h.DB.Preload("Assignee").Preload("CreatedBy").First(&card, card.ID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load created card"})
+	}
+	return c.Status(fiber.StatusCreated).JSON(card)
+}
+
+func (h *CardHandler) Update(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var card models.Card
+	if err := h.DB.First(&card, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
+	}
+
+	var req updateCardRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
+	}
+
+	if req.Title != nil {
+		if strings.TrimSpace(*req.Title) == "" {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "title cannot be empty"})
+		}
+		card.Title = *req.Title
+	}
+	if req.Description != nil {
+		card.Description = *req.Description
+	}
+	if req.Status != nil {
+		if !isValidStatus(*req.Status) {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid status"})
+		}
+		if card.Status != *req.Status {
+			card.Status = *req.Status
+			now := time.Now()
+			card.StatusChangedAt = &now
+		}
+	}
+	if req.AssigneeID != nil {
+		var assignee models.User
+		if err := h.DB.First(&assignee, *req.AssigneeID).Error; err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid assignee"})
+		}
+		card.AssigneeID = req.AssigneeID
+		card.AssigneeName = assignee.Name
+	}
+	if req.Justification != nil {
+		card.Justification = req.Justification
+	}
+
+	if err := h.DB.Save(&card).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not update card"})
+	}
+	if err := h.DB.Preload("Assignee").Preload("CreatedBy").First(&card, card.ID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load updated card"})
+	}
+	return c.JSON(card)
+}
+
+func (h *CardHandler) AddComment(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	id := c.Params("id")
+	var card models.Card
+	if err := h.DB.First(&card, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
+	}
+
+	var req createCommentRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
+	}
+	if strings.TrimSpace(req.Content) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "content is required"})
+	}
+
+	comment := models.Comment{CardID: card.ID, Content: req.Content, CreatedBy: claims.UserID}
+	if err := h.DB.Create(&comment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not add comment"})
+	}
+	if err := h.DB.Preload("Author").First(&comment, comment.ID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load comment"})
+	}
+	return c.Status(fiber.StatusCreated).JSON(comment)
+}
+
+func isSupportedMime(m string) bool {
+	return strings.HasPrefix(m, "image/") || strings.HasPrefix(m, "video/")
+}
+
+func (h *CardHandler) AddAttachment(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	id := c.Params("id")
+	var card models.Card
+	if err := h.DB.First(&card, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
+	}
+
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "file is required"})
+	}
+
+	mimeType := fileHeader.Header.Get("Content-Type")
+	if mimeType == "" {
+		mimeType = mime.TypeByExtension(filepath.Ext(fileHeader.Filename))
+	}
+	if !isSupportedMime(mimeType) {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "only image/video are allowed"})
+	}
+
+	res, err := h.Storage.Save(fileHeader)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not save file"})
+	}
+
+	attachment := models.Attachment{
+		CardID:       card.ID,
+		OriginalName: fileHeader.Filename,
+		MimeType:     mimeType,
+		Size:         fileHeader.Size,
+		StoragePath:  res.StoragePath,
+		PublicURL:    res.PublicURL,
+		UploadedBy:   claims.UserID,
+	}
+	if err := h.DB.Create(&attachment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not persist attachment"})
+	}
+	if err := h.DB.Preload("Uploader").First(&attachment, attachment.ID).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load attachment"})
+	}
+	return c.Status(fiber.StatusCreated).JSON(attachment)
+}
+
+func (h *CardHandler) Delete(c *fiber.Ctx) error {
+	if middleware.CurrentClaims(c) == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	id := c.Params("id")
+	var card models.Card
+	if err := h.DB.First(&card, id).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
+	}
+	err := h.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("card_id = ?", card.ID).Delete(&models.Comment{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("card_id = ?", card.ID).Delete(&models.Attachment{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&card).Error
+	})
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete card"})
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}

@@ -1,0 +1,88 @@
+<svg width="600" height="700" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .overlay { fill: rgba(0,0,0,0.5); }
+      .modal { fill: #ffffff; stroke: #333; stroke-width: 2; rx: 8; }
+      .modal-header { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; }
+      .modal-title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1a1a1a; }
+      .label { font-family: Arial, sans-serif; font-size: 13px; fill: #444; font-weight: 600; }
+      .input { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 4; }
+      .input-text { font-family: Arial, sans-serif; font-size: 12px; fill: #666; }
+      .placeholder { font-family: Arial, sans-serif; font-size: 12px; fill: #999; font-style: italic; }
+      .btn-primary { fill: #2456ff; }
+      .btn-secondary { fill: #e8ecf1; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; }
+      .btn-primary-text { fill: #ffffff; }
+      .btn-secondary-text { fill: #1a1a1a; }
+      .error { fill: #dc3545; }
+      .success { fill: #28a745; }
+      .small { font-family: Arial, sans-serif; font-size: 11px; fill: #888; }
+      .checkbox { rx: 3; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="600" height="700" class="bg"/>
+  
+  <!-- Overlay -->
+  <rect width="600" height="700" class="overlay"/>
+  
+  <!-- Modal -->
+  <rect x="75" y="80" width="450" height="540" class="modal" rx="8"/>
+  
+  <!-- Modal Header -->
+  <rect x="75" y="80" width="450" height="50" class="modal-header" rx="8"/>
+  <text x="100" y="115" class="modal-title">Nova Atividade</text>
+  <text x="500" y="105" class="modal-title" font-size="24">✕</text>
+  
+  <!-- Form Content -->
+  <g>
+    <!-- Título -->
+    <text x="100" y="160" class="label">Título *</text>
+    <rect x="100" y="170" width="350" height="36" class="input" rx="4"/>
+    <text x="110" y="195" class="placeholder">Ex: Implementar login com 2FA</text>
+    
+    <!-- Descrição -->
+    <text x="100" y="245" class="label">Descrição</text>
+    <rect x="100" y="255" width="350" height="70" class="input" rx="4"/>
+    <text x="110" y="275" class="placeholder">Descreva a atividade em detalhes...</text>
+    <text x="110" y="295" class="placeholder">Você pode usar Markdown aqui.</text>
+    
+    <!-- Responsável (Dropdown) -->
+    <text x="100" y="360" class="label">Responsável</text>
+    <rect x="100" y="370" width="350" height="36" class="input" rx="4"/>
+    <text x="110" y="395" class="input-text">Selecione um responsável ▼</text>
+    
+    <!-- Prioridade -->
+    <text x="100" y="445" class="label">Prioridade</text>
+    
+    <!-- Radio buttons -->
+    <circle cx="110" cy="460" r="6" class="checkbox" stroke="#d5dce3" stroke-width="1" fill="none"/>
+    <text x="125" y="464" class="input-text">Baixa</text>
+    
+    <circle cx="210" cy="460" r="6" class="checkbox" stroke="#d5dce3" stroke-width="1" fill="none"/>
+    <text x="225" y="464" class="input-text">Média</text>
+    
+    <circle cx="290" cy="460" r="6" class="checkbox" stroke="#2456ff" stroke-width="2" fill="none"/>
+    <circle cx="290" cy="460" r="3" class="btn-primary"/>
+    <text x="305" y="464" class="input-text">Alta</text>
+    
+    <!-- Data -->
+    <text x="100" y="510" class="label">Data de Vencimento</text>
+    <rect x="100" y="520" width="350" height="36" class="input" rx="4"/>
+    <text x="110" y="545" class="placeholder">DD/MM/YYYY</text>
+  </g>
+  
+  <!-- Buttons -->
+  <g>
+    <rect x="100" y="590" width="160" height="40" class="btn-secondary" rx="4"/>
+    <text x="180" y="617" class="btn-secondary-text" text-anchor="middle" font-weight="bold">Cancelar</text>
+    
+    <rect x="290" y="590" width="160" height="40" class="btn-primary" rx="4"/>
+    <text x="370" y="617" class="btn-primary-text" text-anchor="middle" font-weight="bold">Criar Atividade</text>
+  </g>
+  
+  <!-- Info message -->
+  <text x="100" y="680" class="small">Todos os campos com * são obrigatórios</text>
+</svg>

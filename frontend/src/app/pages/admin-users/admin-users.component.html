@@ -1,0 +1,133 @@
+<main class="page">
+  <header>
+    <h1>Gestão de Usuários do Time</h1>
+    <div class="header-links">
+      <a routerLink="/admin/dashboard">Dashboard</a>
+      <a routerLink="/">← Voltar para Home</a>
+    </div>
+  </header>
+
+  <!-- Create form -->
+  <section class="card">
+    <h2>Novo usuário</h2>
+    <form class="create-form" (ngSubmit)="submit()">
+      <input placeholder="Nome" [(ngModel)]="name" name="name" required />
+      <input placeholder="Email" [(ngModel)]="email" name="email" type="email" required />
+      <input placeholder="Senha" [(ngModel)]="password" name="password" type="password" required />
+      <select [(ngModel)]="role" name="role">
+        <option value="member">Membro</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button type="submit" class="btn btn-primary">Cadastrar</button>
+    </form>
+    <p *ngIf="error()" class="msg-error">{{ error() }}</p>
+    <p *ngIf="success()" class="msg-success">{{ success() }}</p>
+  </section>
+
+  <!-- Users table -->
+  <section class="card">
+    <h2>Membros do time</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Papel</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users()" [class.inactive-row]="!u.active">
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td><span class="badge" [class.badge-admin]="u.role === 'admin'">{{ u.role }}</span></td>
+          <td><span class="badge" [class.badge-active]="u.active" [class.badge-inactive]="!u.active">{{ u.active ? 'Ativo' : 'Inativo' }}</span></td>
+          <td class="actions">
+            <button class="btn btn-sm btn-secondary" (click)="openEdit(u)" title="Editar">✏️ Editar</button>
+            <button
+              class="btn btn-sm btn-info"
+              (click)="resetPasswordToEmail(u)"
+              [disabled]="isSelf(u)"
+              [title]="isSelf(u) ? 'Use alterar senha para sua conta' : 'Resetar senha para o email do usuário'"
+            >
+              🔁 Resetar senha
+            </button>
+            <button
+              class="btn btn-sm"
+              [class.btn-warning]="u.active"
+              [class.btn-success]="!u.active"
+              (click)="toggleActive(u)"
+              [disabled]="isSelf(u)"
+              [title]="isSelf(u) ? 'Não é possível alterar seu próprio status' : (u.active ? 'Desativar' : 'Ativar')"
+            >
+              {{ u.active ? '🔒 Desativar' : '🔓 Ativar' }}
+            </button>
+            <button
+              class="btn btn-sm btn-danger"
+              (click)="openDelete(u)"
+              [disabled]="isSelf(u)"
+              [title]="isSelf(u) ? 'Não é possível excluir seu próprio usuário' : 'Excluir'"
+            >
+              🗑️ Excluir
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- Edit Modal -->
+<div *ngIf="editingUser()" class="modal-backdrop" (click)="closeEdit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Editar usuário</h2>
+      <button class="btn-close" (click)="closeEdit()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Nome *</label>
+        <input class="form-input" [(ngModel)]="editName" placeholder="Nome" />
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input class="form-input" [(ngModel)]="editEmail" type="email" placeholder="Email" />
+      </div>
+      <div class="form-group">
+        <label>Papel</label>
+        <select class="form-input" [(ngModel)]="editRole">
+          <option value="member">Membro</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nova senha <small>(deixe em branco para manter)</small></label>
+        <input class="form-input" [(ngModel)]="editPassword" type="password" placeholder="Nova senha" />
+      </div>
+      <p *ngIf="editError()" class="msg-error">{{ editError() }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeEdit()">Cancelar</button>
+      <button class="btn btn-primary" (click)="saveEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div *ngIf="deletingUser()" class="modal-backdrop" (click)="closeDelete()">
+  <div class="modal modal-sm" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Excluir usuário</h2>
+      <button class="btn-close" (click)="closeDelete()">×</button>
+    </div>
+    <div class="modal-body">
+      <p>Tem certeza que deseja excluir <strong>{{ deletingUser()?.name }}</strong>?</p>
+      <p class="msg-error">Esta ação não pode ser desfeita.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeDelete()">Cancelar</button>
+      <button class="btn btn-danger" (click)="confirmDelete()">Excluir</button>
+    </div>
+  </div>
+</div>

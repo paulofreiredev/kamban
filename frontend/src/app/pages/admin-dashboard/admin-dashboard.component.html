@@ -1,0 +1,84 @@
+<main class="page">
+  <header class="page-header">
+    <h1>Dashboard Administrativo</h1>
+    <div class="header-actions">
+      <a routerLink="/" class="btn btn-secondary">← Home</a>
+      <a routerLink="/admin/users" class="btn btn-secondary">Gerenciar usuários</a>
+    </div>
+  </header>
+
+  <section class="card filters">
+    <div class="filter-group">
+      <label>De</label>
+      <input type="date" [(ngModel)]="fromDate" />
+    </div>
+    <div class="filter-group">
+      <label>Até</label>
+      <input type="date" [(ngModel)]="toDate" />
+    </div>
+    <div class="filter-group">
+      <button class="btn btn-primary" (click)="load()">Atualizar</button>
+    </div>
+  </section>
+
+  <p *ngIf="error()" class="msg-error">{{ error() }}</p>
+  <p *ngIf="loading()" class="loading">Carregando dashboard...</p>
+
+  <div *ngIf="!loading() && summary()" class="grid">
+    <section class="card">
+      <h2>Tarefas por status no período</h2>
+      <p class="subtitle">{{ summary()?.from }} até {{ summary()?.to }} (Total: {{ totalTasks() }})</p>
+
+      <div class="pie-wrap">
+        <div class="pie" [style.background]="pieGradient()"></div>
+        <div class="legend">
+          <div *ngFor="let item of pieSlices()" class="legend-item">
+            <span class="dot" [style.background]="item.color"></span>
+            <span>{{ item.label }}</span>
+            <strong>{{ item.count }}</strong>
+            <small>({{ item.percent }}%)</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Produtividade por usuário</h2>
+      <p class="subtitle">Em andamento e concluídas no período selecionado</p>
+
+      <div class="highlights" *ngIf="summary()?.userProductivity?.length">
+        <p>
+          <strong>Mais produtivo:</strong>
+          {{ mostProductive()?.userName || 'N/A' }}
+        </p>
+        <p>
+          <strong>Menos produtivo:</strong>
+          {{ leastProductive()?.userName || 'N/A' }}
+        </p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Usuário</th>
+            <th>Em andamento</th>
+            <th>Concluídas</th>
+            <th>Classificação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let u of summary()?.userProductivity">
+            <td>{{ u.userName }}</td>
+            <td>{{ u.inProgressCount }}</td>
+            <td>{{ u.doneCount }}</td>
+            <td>
+              <span *ngIf="isMost(u)" class="badge badge-best">Mais produtivo</span>
+              <span *ngIf="isLeast(u)" class="badge badge-least">Menos produtivo</span>
+              <span *ngIf="!isMost(u) && !isLeast(u)">-</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</main>

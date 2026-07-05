@@ -1,0 +1,236 @@
+<svg width="1000" height="1400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .header-main { fill: #1a1a1a; }
+      .header-text { font-family: Arial, sans-serif; font-size: 24px; font-weight: bold; fill: #ffffff; }
+      .section-title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #2456ff; }
+      .section-bg { fill: #ffffff; stroke: #e0e3e8; stroke-width: 2; rx: 8; }
+      .step-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1a1a1a; }
+      .step-text { font-family: Arial, sans-serif; font-size: 12px; fill: #666; }
+      .icon { font-size: 32px; }
+      .arrow-text { font-family: Arial, sans-serif; font-size: 11px; fill: #2456ff; font-weight: bold; }
+      .success { fill: #28a745; }
+      .warning { fill: #ffc107; }
+      .danger { fill: #dc3545; }
+      .info-box { fill: #e8f4f8; stroke: #2456ff; stroke-width: 1; rx: 4; }
+      .info-text { font-family: Arial, sans-serif; font-size: 11px; fill: #044062; }
+      .column-header { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; rx: 4; }
+      .column-title { font-family: Arial, sans-serif; font-size: 11px; font-weight: bold; fill: #1a1a1a; }
+      .card { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 4; }
+      .card-text { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1000" height="1400" class="bg"/>
+  
+  <!-- Header -->
+  <rect width="1000" height="60" class="header-main"/>
+  <text x="30" y="45" class="header-text">🚀 Guia Visual Completo - Kanban Kamban</text>
+  
+  <!-- Section 1: Criar Atividade -->
+  <g>
+    <text x="30" y="100" class="section-title">1️⃣ Criar Atividade</text>
+    <rect x="20" y="110" width="960" height="180" class="section-bg" rx="8"/>
+    
+    <!-- Steps -->
+    <g>
+      <!-- Step 1 -->
+      <text x="40" y="135" class="step-title">1. Clique "+Nova Atividade"</text>
+      <text x="40" y="150" class="step-text">Botão no header, lado direito</text>
+      <text x="40" y="165" class="step-text">Modal se abre com formulário</text>
+      
+      <!-- Step 2 -->
+      <text x="40" y="190" class="step-title">2. Preencha Campos</text>
+      <text x="40" y="205" class="step-text">✓ Título (obrigatório)</text>
+      <text x="40" y="220" class="step-text">○ Descrição, Responsável, Prioridade, Data</text>
+      
+      <!-- Step 3 -->
+      <text x="40" y="245" class="step-title">3. Clique "Criar Atividade"</text>
+      <text x="40" y="260" class="step-text">Card aparece em BACKLOG</text>
+      <text x="40" y="275" class="step-text">Pronto para ser movido</text>
+      
+      <!-- Info box -->
+      <rect x="550" y="130" width="400" height="155" class="info-box" rx="4"/>
+      <text x="570" y="150" class="info-text" font-weight="bold">💡 Campos do Modal:</text>
+      <text x="570" y="168" class="info-text">• Título: Máx 100 caracteres</text>
+      <text x="570" y="183" class="info-text">• Descrição: Suporta Markdown</text>
+      <text x="570" y="198" class="info-text">• Responsável: Dropdown com team</text>
+      <text x="570" y="213" class="info-text">• Prioridade: Baixa, Média, Alta</text>
+      <text x="570" y="228" class="info-text">• Data: Date picker (opcional)</text>
+      <text x="570" y="243" class="info-text">⌨️ ESC: fecha modal sem salvar</text>
+      <text x="570" y="258" class="info-text">🖱️ Backdrop click: também fecha</text>
+    </g>
+  </g>
+  
+  <!-- Section 2: Mover Atividades -->
+  <g>
+    <text x="30" y="330" class="section-title">2️⃣ Mover Atividades (Drag-Drop)</text>
+    <rect x="20" y="340" width="960" height="280" class="section-bg" rx="8"/>
+    
+    <!-- Forward -->
+    <g>
+      <text x="40" y="365" class="step-title">Forward ➜ (Sem Modal)</text>
+      <text x="40" y="382" class="step-text">Mover para DIREITA (próxima coluna)</text>
+      
+      <!-- Columns -->
+      <g>
+        <text x="40" y="410" class="step-text">A Fazer</text>
+        <text x="120" y="410" class="arrow-text">→</text>
+        <text x="145" y="410" class="step-text">Em Progresso</text>
+        <text x="300" y="410" class="arrow-text">→</text>
+        <text x="325" y="410" class="step-text">Em Revisão</text>
+        <text x="480" y="410" class="arrow-text">→</text>
+        <text x="505" y="410" class="step-text">Concluído</text>
+      </g>
+      
+      <text x="40" y="435" class="step-text">✓ Move instantaneamente</text>
+      <text x="40" y="450" class="step-text">✓ Sem justificativa necessária</text>
+      <text x="40" y="465" class="step-text">✓ Rápido e fluido</text>
+      
+      <!-- Info box for forward -->
+      <rect x="550" y="360" width="400" height="120" class="info-box" rx="4"/>
+      <text x="570" y="380" class="info-text" font-weight="bold">⚡ Forward = Rápido</text>
+      <text x="570" y="398" class="info-text">Movimento natural do trabalho</text>
+      <text x="570" y="413" class="info-text">Sem bloqueios ou validações</text>
+      <text x="570" y="428" class="info-text">Exemplo: começando tarefa</text>
+      <text x="570" y="443" class="info-text">Feedback imediato ao usuário</text>
+    </g>
+    
+    <!-- Backward -->
+    <g>
+      <text x="40" y="510" class="step-title">Backward ⬅ (Com Modal)</text>
+      <text x="40" y="527" class="step-text">Mover para ESQUERDA (coluna anterior)</text>
+      
+      <!-- Columns -->
+      <g>
+        <text x="40" y="555" class="step-text">Concluído</text>
+        <text x="120" y="555" class="arrow-text">←</text>
+        <text x="145" y="555" class="step-text">Em Revisão</text>
+        <text x="300" y="555" class="arrow-text">←</text>
+        <text x="325" y="555" class="step-text">Em Progresso</text>
+        <text x="480" y="555" class="arrow-text">←</text>
+        <text x="505" y="555" class="step-text">A Fazer</text>
+      </g>
+      
+      <text x="40" y="580" class="step-text" fill="#dc3545">⚠️ Modal aparece pedindo justificativa</text>
+      <text x="40" y="595" class="step-text" fill="#dc3545">⚠️ Preencha motivo (obrigatório)</text>
+      <text x="40" y="610" class="step-text" fill="#dc3545">⚠️ Clique "Confirmar Retrocesso"</text>
+      
+      <!-- Info box for backward -->
+      <rect x="550" y="505" width="400" height="120" class="info-box" rx="4" stroke="#dc3545"/>
+      <text x="570" y="525" class="info-text" font-weight="bold" fill="#dc3545">⚠️ Backward = Rastreado</text>
+      <text x="570" y="543" class="info-text">Requer justificativa obrigatória</text>
+      <text x="570" y="558" class="info-text">Mínimo 10 caracteres</text>
+      <text x="570" y="573" class="info-text">Registrado no histórico</text>
+      <text x="570" y="588" class="info-text">Exemplo: bug encontrado</text>
+    </g>
+  </g>
+  
+  <!-- Section 3: Justificativa -->
+  <g>
+    <text x="30" y="660" class="section-title">3️⃣ Modal de Justificativa</text>
+    <rect x="20" y="670" width="960" height="200" class="section-bg" rx="8"/>
+    
+    <!-- Content -->
+    <g>
+      <text x="40" y="695" class="step-title">⚠️ Quando Aparece?</text>
+      <text x="40" y="712" class="step-text">• Qualquer movimento para trás (backward)</text>
+      <text x="40" y="727" class="step-text">• Movimento para status "Cancelado"</text>
+      <text x="40" y="742" class="step-text">• Sempre ao retroceder, independente do status</text>
+      
+      <text x="40" y="772" class="step-title">📝 O que Preencher?</text>
+      <text x="40" y="789" class="step-text">• Justificativa: Por que retroceder? (obrigatório, min 10 chars)</text>
+      <text x="40" y="804" class="step-text">• Categoria: Tipo de problema (opcional: Bug, Feedback, Requisito, etc)</text>
+      
+      <text x="40" y="834" class="step-title">✓ Após Confirmar</text>
+      <text x="40" y="851" class="step-text">✓ Atividade muda de status</text>
+      <text x="40" y="866" class="step-text">✓ Justificativa salva no histórico do card</text>
+      
+      <!-- Info -->
+      <rect x="550" y="680" width="400" height="180" class="info-box" rx="4"/>
+      <text x="570" y="700" class="info-text" font-weight="bold">💼 Auditoria:</text>
+      <text x="570" y="718" class="info-text">Justificativas são imutáveis</text>
+      <text x="570" y="733" class="info-text">Ficam registradas permanentemente</text>
+      <text x="570" y="748" class="info-text">Suporta caracteres especiais/emojis</text>
+      <text x="570" y="763" class="info-text">Histórico completo do card</text>
+      <text x="570" y="778" class="info-text">Útil para análise e retrospectivas</text>
+      <text x="570" y="793" class="info-text">Exemplo: "Bug crítico encontrado"</text>
+      <text x="570" y="808" class="info-text">"Mudança de requisitos do cliente"</text>
+      <text x="570" y="823" class="info-text">"Bloqueado por dependência"</text>
+      <text x="570" y="843" class="info-text" font-weight="bold">👤 Quem pode ver?</text>
+      <text x="570" y="858" class="info-text">Todos os membros do time</text>
+    </g>
+  </g>
+  
+  <!-- Section 4: Filtro -->
+  <g>
+    <text x="30" y="920" class="section-title">4️⃣ Filtro por Responsável</text>
+    <rect x="20" y="930" width="960" height="200" class="section-bg" rx="8"/>
+    
+    <!-- Content -->
+    <g>
+      <text x="40" y="955" class="step-title">🔍 Como Usar?</text>
+      <text x="40" y="972" class="step-text">1. Localize dropdown "Responsável" no header</text>
+      <text x="40" y="987" class="step-text">2. Clique para abrir lista</text>
+      <text x="40" y="1002" class="step-text">3. Selecione:</text>
+      <text x="40" y="1017" class="step-text">   • Todos (padrão) → Todas as atividades</text>
+      <text x="40" y="1032" class="step-text">   • João Silva → Apenas de João</text>
+      <text x="40" y="1047" class="step-text">   • Maria Costa → Apenas de Maria</text>
+      <text x="40" y="1062" class="step-text">   • Pedro Santos → Apenas de Pedro</text>
+      <text x="40" y="1077" class="step-text">   • Ana Oliveira → Apenas de Ana</text>
+      
+      <text x="40" y="1107" class="step-title">⚡ Comportamentos</text>
+      <text x="40" y="1124" class="step-text">✓ Atualiza board em tempo real</text>
+      <text x="40" y="1139" class="step-text">✓ Mostra contagem de cards por responsável</text>
+      <text x="40" y="1154" class="step-text">✓ Combinável com filtro de datas</text>
+      
+      <!-- Info -->
+      <rect x="550" y="935" width="400" height="195" class="info-box" rx="4"/>
+      <text x="570" y="955" class="info-text" font-weight="bold">💡 Casos de Uso:</text>
+      <text x="570" y="973" class="info-text">• Acompanhar carga de trabalho</text>
+      <text x="570" y="988" class="info-text">• Standups e reuniões</text>
+      <text x="570" y="1003" class="info-text">• Análise de throughput</text>
+      <text x="570" y="1018" class="info-text">• Planeamento de sprints</text>
+      <text x="570" y="1033" class="info-text">• Balanceamento de equipe</text>
+      <text x="570" y="1053" class="info-text" font-weight="bold">📊 O que Muda?</text>
+      <text x="570" y="1071" class="info-text">Só aparecem cards do responsável</text>
+      <text x="570" y="1086" class="info-text">Colunas mostram contagem atualizada</text>
+      <text x="570" y="1101" class="info-text">Outras funcionalidades normais</text>
+      <text x="570" y="1116" class="info-text">(pode criar, mover, etc)</text>
+    </g>
+  </g>
+  
+  <!-- Section 5: Board -->
+  <g>
+    <text x="30" y="1180" class="section-title">5️⃣ Visão do Board</text>
+    <rect x="20" y="1190" width="960" height="160" class="section-bg" rx="8"/>
+    
+    <!-- Content -->
+    <g>
+      <text x="40" y="1215" class="step-title">📊 Colunas do Kanban:</text>
+      
+      <!-- Columns -->
+      <g>
+        <text x="40" y="1245" class="step-text">🔷 BACKLOG</text>
+        <text x="140" y="1245" class="step-text">🟦 A FAZER</text>
+        <text x="260" y="1245" class="step-text">🟪 EM PROGRESSO</text>
+        <text x="450" y="1245" class="step-text">🟨 EM REVISÃO</text>
+        <text x="640" y="1245" class="step-text">🟩 CONCLUÍDO</text>
+        <text x="800" y="1245" class="step-text">🔴 CANCELADO</text>
+      </g>
+      
+      <text x="40" y="1270" class="step-text">Ideias não        Priorizado      Sendo            Em análise       Finalizadas      Com justificativa</text>
+      <text x="40" y="1285" class="step-text">começadas        para fazer      trabalhado       de qualidade    e testadas       registrada</text>
+      
+      <text x="40" y="1315" class="step-title">✨ Características:</text>
+      <text x="40" y="1332" class="step-text">• Drag-drop entre colunas  • Contadores por coluna  • Info do responsável em cada card  • Suporte a filtros</text>
+    </g>
+  </g>
+  
+  <!-- Footer -->
+  <g>
+    <rect x="0" y="1390" width="1000" height="10" fill="#2456ff"/>
+  </g>
+</svg>

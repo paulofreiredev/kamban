@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: kamban
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d kamban"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      PORT: 8080
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/kamban?sslmode=disable
+      JWT_SECRET: change-me-secret
+      UPLOAD_DIR: /app/uploads
+      UPLOAD_PUBLIC_PREFIX: /uploads
+      CORS_ORIGINS: http://localhost:4200,http://localhost:8081
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+
+  db-seed:
+    image: postgres:16-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    environment:
+      PGPASSWORD: postgres
+    volumes:
+      - ./backend/internal/database/scripts:/scripts:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "
+      until pg_isready -h postgres -U postgres -d kamban; do echo 'waiting postgres'; sleep 2; done;
+      until psql -h postgres -U postgres -d kamban -tAc \"SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='users'\" | grep -q 1; do echo 'waiting users table'; sleep 2; done;
+      psql -h postgres -U postgres -d kamban -f /scripts/001_seed_admin.sql;
+      echo 'db seed finished';
+      "
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - '8081:80'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  uploads_data:

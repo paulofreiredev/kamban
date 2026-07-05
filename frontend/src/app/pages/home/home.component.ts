@@ -1,0 +1,389 @@
+import { Component, OnDestroy, computed, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { ApiService } from '../../core/api.service';
+import { AuthService } from '../../core/auth.service';
+import { Card, CardStatus, User } from '../../models';
+
+const STATUS_COLUMNS: { key: CardStatus; label: string }[] = [
+  { key: 'backlog', label: 'Backlog' },
+  { key: 'todo', label: 'A Fazer' },
+  { key: 'in_progress', label: 'Em Progresso' },
+  { key: 'in_review', label: 'Em Revisão' },
+  { key: 'done', label: 'Concluído' },
+  { key: 'cancelled', label: 'Cancelado' }
+];
+
+const statusOrder: Record<CardStatus, number> = {
+  'backlog': 0,
+  'todo': 1,
+  'in_progress': 2,
+  'in_review': 3,
+  'done': 4,
+  'cancelled': 5
+};
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DragDropModule],
+  templateUrl: './home.component.html',
+  styleUrl: './home.component.css'
+})
+export class HomeComponent implements OnDestroy {
+  columns = STATUS_COLUMNS;
+  readonly dropListIds = STATUS_COLUMNS.map((column) => column.key);
+  cards = signal<Card[]>([]);
+  users = signal<User[]>([]);
+  selectedCard = signal<Card | null>(null);
+  showNewCardModal = signal(false);
+  showJustificationModal = signal(false);
+  showDetailsDrawer = signal(false);
+  showPasswordModal = signal(false);
+  savingAssignee = signal(false);
+  loading = signal(false);
+  passwordError = signal('');
+  passwordSuccess = signal('');
+
+  fromDate = this.toDateInput(this.daysAgo(30));
+  toDate = this.toDateInput(new Date());
+  selectedAssigneeId: number | '' = '';
+
+  newCardForm: FormGroup;
+  justificationForm: FormGroup;
+
+  pendingCardMove: { cardId: number; fromStatus: CardStatus; toStatus: CardStatus } | null = null;
+  isDragging = false;
+  detailAssigneeId: number | '' = '';
+  nowTick = signal(Date.now());
+  private tickIntervalId: ReturnType<typeof setInterval> | null = null;
+
+  newComment = '';
+  currentPassword = '';
+  newPassword = '';
+  confirmPassword = '';
+
+  grouped = computed(() => {
+    const out: Record<string, Card[]> = {};
+    for (const c of STATUS_COLUMNS) out[c.key] = [];
+    for (const card of this.cards()) out[card.status]?.push(card);
+    return out;
+  });
+
+  constructor(
+    public auth: AuthService,
+    private api: ApiService,
+    private fb: FormBuilder
+  ) {
+    this.newCardForm = this.fb.group({
+      title: ['', [Validators.required, Validators.minLength(1)]],
+      description: [''],
+      assigneeId: ['']
+    });
+
+    this.justificationForm = this.fb.group({
+      justification: ['', [Validators.required, Validators.minLength(1)]]
+    });
+
+    this.tickIntervalId = setInterval(() => {
+      this.nowTick.set(Date.now());
+    }, 60_000);
+
+    this.reloadUsers();
+    this.reloadCards();
+  }
+
+  ngOnDestroy(): void {
+    if (this.tickIntervalId) {
+      clearInterval(this.tickIntervalId);
+      this.tickIntervalId = null;
+    }
+  }
+
+  private daysAgo(days: number) {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d;
+  }
+
+  private toDateInput(d: Date) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  reloadUsers() {
+    this.api.listUsers().subscribe({ next: (users) => this.users.set(users) });
+  }
+
+  reloadCards() {
+    this.loading.set(true);
+    const params: any = { from: this.fromDate, to: this.toDate };
+    if (this.selectedAssigneeId !== '') {
+      params.assigneeId = this.selectedAssigneeId;
+    }
+    this.api.listCards(params.from, params.to, params.assigneeId).subscribe({
+      next: (cards) => {
+        this.cards.set(cards);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  openNewCardModal() {
+    this.newCardForm.reset();
+    this.showNewCardModal.set(true);
+  }
+
+  closeNewCardModal() {
+    this.showNewCardModal.set(false);
+  }
+
+  openPasswordModal() {
+    this.currentPassword = '';
+    this.newPassword = '';
+    this.confirmPassword = '';
+    this.passwordError.set('');
+    this.passwordSuccess.set('');
+    this.showPasswordModal.set(true);
+  }
+
+  closePasswordModal() {
+    this.showPasswordModal.set(false);
+  }
+
+  submitPasswordChange() {
+    this.passwordError.set('');
+    this.passwordSuccess.set('');
+
+    if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
+      this.passwordError.set('Preencha todos os campos.');
+      return;
+    }
+    if (this.newPassword.length < 8) {
+      this.passwordError.set('A nova senha deve ter ao menos 8 caracteres.');
+      return;
+    }
+    if (this.newPassword !== this.confirmPassword) {
+      this.passwordError.set('A confirmação da senha não confere.');
+      return;
+    }
+
+    this.api.changeMyPassword({ currentPassword: this.currentPassword, newPassword: this.newPassword }).subscribe({
+      next: (res) => {
+        this.passwordSuccess.set(res.message || 'Senha alterada com sucesso.');
+        this.currentPassword = '';
+        this.newPassword = '';
+        this.confirmPassword = '';
+      },
+      error: (err) => this.passwordError.set(err?.error?.message || 'Não foi possível alterar a senha')
+    });
+  }
+
+  submitNewCard() {
+    if (!this.newCardForm.valid) return;
+    const payload: any = {
+      title: this.newCardForm.get('title')?.value,
+      description: this.newCardForm.get('description')?.value || '',
+      status: 'backlog'
+    };
+    const assigneeId = this.newCardForm.get('assigneeId')?.value;
+    if (assigneeId) payload.assigneeId = Number(assigneeId);
+
+    this.api.createCard(payload).subscribe({
+      next: () => {
+        this.closeNewCardModal();
+        this.reloadCards();
+      }
+    });
+  }
+
+  onFilterChange() {
+    this.reloadCards();
+  }
+
+  isRegression(fromStatus: CardStatus, toStatus: CardStatus): boolean {
+    return statusOrder[toStatus] < statusOrder[fromStatus];
+  }
+
+  isCancellation(toStatus: CardStatus): boolean {
+    return toStatus === 'cancelled';
+  }
+
+  onCardDrop(event: CdkDragDrop<Card[]>, targetStatus: CardStatus) {
+    if (event.previousContainer === event.container) return;
+
+    const card = event.previousContainer.data[event.previousIndex];
+    if (!card) return;
+
+    if (this.isRegression(card.status, targetStatus) || this.isCancellation(targetStatus)) {
+      this.pendingCardMove = { cardId: card.id, fromStatus: card.status, toStatus: targetStatus };
+      this.showJustificationModal.set(true);
+    } else {
+      this.moveCard(card.id, targetStatus, null);
+    }
+  }
+
+  submitJustification() {
+    if (!this.justificationForm.valid || !this.pendingCardMove) return;
+    const justification = this.justificationForm.get('justification')?.value;
+    this.moveCard(this.pendingCardMove.cardId, this.pendingCardMove.toStatus, justification);
+    this.showJustificationModal.set(false);
+    this.justificationForm.reset();
+    this.pendingCardMove = null;
+  }
+
+  closeJustificationModal() {
+    this.showJustificationModal.set(false);
+    this.pendingCardMove = null;
+  }
+
+  private moveCard(cardId: number, newStatus: CardStatus, justification: string | null) {
+    const previousCards = this.cards();
+    this.cards.set(
+      previousCards.map((card) =>
+        card.id === cardId ? { ...card, status: newStatus, justification: justification ?? card.justification } : card
+      )
+    );
+
+    const payload: any = { status: newStatus };
+    if (justification) payload.justification = justification;
+
+    this.api.updateCard(cardId, payload).subscribe({
+      next: () => this.reloadCards(),
+      error: () => this.cards.set(previousCards)
+    });
+  }
+
+  onDragStarted() {
+    this.isDragging = true;
+  }
+
+  onDragEnded() {
+    setTimeout(() => {
+      this.isDragging = false;
+    });
+  }
+
+  onCardClick(card: Card) {
+    if (this.isDragging) return;
+    this.openCard(card);
+  }
+
+  openCard(card: Card) {
+    this.api.getCard(card.id).subscribe({
+      next: (full) => {
+        this.selectedCard.set(full);
+        this.detailAssigneeId = full.assigneeId ?? '';
+        this.showDetailsDrawer.set(true);
+      }
+    });
+  }
+
+  saveCardAssignee() {
+    const card = this.selectedCard();
+    if (!card || this.detailAssigneeId === '') return;
+
+    this.savingAssignee.set(true);
+    const nextAssigneeId = Number(this.detailAssigneeId);
+
+    this.api.updateCard(card.id, { assigneeId: nextAssigneeId }).subscribe({
+      next: (updated) => {
+        this.selectedCard.set(updated);
+        this.detailAssigneeId = updated.assigneeId ?? '';
+        this.cards.set(
+          this.cards().map((item) =>
+            item.id === updated.id
+              ? { ...item, assigneeId: updated.assigneeId ?? null, assigneeName: updated.assigneeName ?? '', assignee: updated.assignee ?? null }
+              : item
+          )
+        );
+        this.savingAssignee.set(false);
+      },
+      error: () => this.savingAssignee.set(false)
+    });
+  }
+
+  closeDetailsDrawer() {
+    this.selectedCard.set(null);
+    this.showDetailsDrawer.set(false);
+    this.detailAssigneeId = '';
+    this.newComment = '';
+  }
+
+  deleteSelectedCard() {
+    const card = this.selectedCard();
+    if (!card) return;
+    if (!confirm(`Excluir o card "${card.title}"? Esta ação não pode ser desfeita.`)) return;
+    this.api.deleteCard(card.id).subscribe({
+      next: () => {
+        this.cards.set(this.cards().filter(c => c.id !== card.id));
+        this.closeDetailsDrawer();
+      }
+    });
+  }
+
+  addComment() {
+    const card = this.selectedCard();
+    if (!card || !this.newComment.trim()) return;
+    this.api.addComment(card.id, this.newComment).subscribe({
+      next: () => {
+        this.newComment = '';
+        this.openCard(card);
+      }
+    });
+  }
+
+  onFileChange(evt: Event) {
+    const card = this.selectedCard();
+    if (!card) return;
+    const input = evt.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.api.uploadAttachment(card.id, file).subscribe({
+      next: () => {
+        input.value = '';
+        this.openCard(card);
+      }
+    });
+  }
+
+  getUserName(userId: number | undefined): string {
+    if (!userId) return 'N/A';
+    return this.users().find(u => u.id === userId)?.name || 'N/A';
+  }
+
+  getAssigneeName(card: Card): string {
+    if (card.assigneeName) return card.assigneeName;
+    return this.getUserName(card.assigneeId ?? undefined);
+  }
+
+  getTimeInCurrentColumn(card: Card): string {
+    this.nowTick();
+
+    const parsedStatusChangedAt = card.statusChangedAt ? new Date(card.statusChangedAt) : null;
+    const hasValidStatusChangedAt = !!parsedStatusChangedAt && !Number.isNaN(parsedStatusChangedAt.getTime()) && parsedStatusChangedAt.getFullYear() >= 2000;
+    const startedAtRaw = hasValidStatusChangedAt ? card.statusChangedAt! : card.createdAt;
+    const startedAt = new Date(startedAtRaw).getTime();
+    const now = Date.now();
+
+    if (Number.isNaN(startedAt) || startedAt > now) {
+      return '0min';
+    }
+
+    const diffMs = now - startedAt;
+    const minutes = Math.floor(diffMs / (1000 * 60));
+    if (minutes < 60) {
+      return `${minutes}min`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+      return `${hours}h`;
+    }
+
+    const days = Math.floor(hours / 24);
+    return `${days}d`;
+  }
+}

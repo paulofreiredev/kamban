@@ -1,0 +1,22 @@
+<main class="login-page">
+  <section class="card">
+    <h1>Kamban</h1>
+    <p>Entre com seu usuário.</p>
+
+    <form (ngSubmit)="submit()">
+      <label>Email</label>
+      <input [(ngModel)]="email" name="email" type="email" required />
+
+      <label>Senha</label>
+      <input [(ngModel)]="password" name="password" type="password" required />
+
+      <button [disabled]="loading()" type="submit">
+        {{ loading() ? 'Entrando...' : 'Entrar' }}
+      </button>
+
+      <p class="error" *ngIf="error()">{{ error() }}</p>
+    </form>
+
+    <small>Usuário inicial padrão: admin&#64;kamban.local / admin123</small>
+  </section>
+</main>

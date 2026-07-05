@@ -1,0 +1,41 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #f5f7fb;
+}
+
+.card {
+  width: min(420px, 95vw);
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+h1 { margin: 0 0 8px; }
+p { margin: 0 0 16px; }
+
+form {
+  display: grid;
+  gap: 8px;
+}
+
+input, button, select, textarea {
+  font: inherit;
+  padding: 10px;
+  border: 1px solid #cfd6e4;
+  border-radius: 8px;
+}
+
+button {
+  background: #2456ff;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+button:disabled { opacity: 0.7; cursor: not-allowed; }
+.error { color: #c62828; margin-top: 8px; }
+small { display: block; margin-top: 12px; color: #666; }

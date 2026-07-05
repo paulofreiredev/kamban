@@ -1,0 +1,138 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .header { fill: #ffffff; stroke: #e0e3e8; stroke-width: 1; }
+      .column { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; }
+      .card { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 6; }
+      .card-hover { fill: #ffffff; stroke: #2456ff; stroke-width: 2; }
+      .title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #1a1a1a; }
+      .text { font-family: Arial, sans-serif; font-size: 12px; fill: #555; }
+      .small { font-family: Arial, sans-serif; font-size: 10px; fill: #888; }
+      .button { fill: #2456ff; }
+      .button-text { font-family: Arial, sans-serif; font-size: 11px; fill: #ffffff; font-weight: bold; }
+      .label { font-family: Arial, sans-serif; font-size: 12px; fill: #666; font-weight: 600; }
+      .count { fill: #e8ecf1; }
+      .count-text { font-family: Arial, sans-serif; font-size: 11px; fill: #1a1a1a; font-weight: 600; }
+      .arrow { stroke: #2456ff; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .modal-bg { fill: rgba(0,0,0,0.4); }
+      .modal { fill: #ffffff; stroke: #333; stroke-width: 2; rx: 8; }
+      .modal-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#2456ff" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="600" class="bg"/>
+  
+  <!-- Header -->
+  <rect width="800" height="60" class="header"/>
+  <text x="20" y="40" class="title">Kanban Board - Novo com Modal + Drag-Drop + Justificativa</text>
+  
+  <!-- Filtros -->
+  <rect x="20" y="70" width="760" height="40" class="header"/>
+  <text x="30" y="90" class="label">De:</text>
+  <rect x="60" y="78" width="100" height="24" class="header" stroke-width="1"/>
+  <text x="70" y="95" class="text">2026-06-05</text>
+  
+  <text x="180" y="90" class="label">Até:</text>
+  <rect x="210" y="78" width="100" height="24" class="header" stroke-width="1"/>
+  <text x="220" y="95" class="text">2026-07-05</text>
+  
+  <text x="330" y="90" class="label">Responsável:</text>
+  <rect x="430" y="78" width="130" height="24" class="header" stroke-width="1"/>
+  <text x="440" y="95" class="text">Todos ▼</text>
+  
+  <rect x="580" y="75" width="190" height="30" class="button" rx="4"/>
+  <text x="590" y="95" class="button-text">+ Nova Atividade</text>
+  
+  <!-- Colunas -->
+  <g>
+    <!-- Backlog -->
+    <rect x="20" y="130" width="110" height="450" class="column"/>
+    <text x="30" y="152" class="label">Backlog</text>
+    <rect x="50" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="62" y="160" class="count-text" text-anchor="middle">3</text>
+    
+    <!-- Card 1 em Backlog -->
+    <rect x="28" y="175" width="94" height="60" class="card" rx="6"/>
+    <text x="35" y="192" class="title">Feature A</text>
+    <text x="35" y="210" class="text">Implementar...</text>
+    <text x="35" y="225" class="small">João</text>
+    
+    <!-- Card 2 em Backlog -->
+    <rect x="28" y="245" width="94" height="60" class="card" rx="6"/>
+    <text x="35" y="262" class="title">Feature B</text>
+    <text x="35" y="280" class="text">Melhorias UI...</text>
+    <text x="35" y="295" class="small">Maria</text>
+    
+    <!-- A Fazer -->
+    <rect x="145" y="130" width="110" height="450" class="column"/>
+    <text x="155" y="152" class="label">A Fazer</text>
+    <rect x="175" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="187" y="160" class="count-text" text-anchor="middle">2</text>
+    
+    <!-- Card em A Fazer -->
+    <rect x="153" y="175" width="94" height="60" class="card" rx="6"/>
+    <text x="160" y="192" class="title">Task 001</text>
+    <text x="160" y="210" class="text">Refatorar...</text>
+    <text x="160" y="225" class="small">João</text>
+    
+    <!-- Em Progresso -->
+    <rect x="270" y="130" width="110" height="450" class="column"/>
+    <text x="280" y="152" class="label">Em Progresso</text>
+    <rect x="300" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="312" y="160" class="count-text" text-anchor="middle">1</text>
+    
+    <!-- Card com destaque para drag -->
+    <rect x="278" y="175" width="94" height="60" class="card-hover" rx="6"/>
+    <text x="285" y="192" class="title">Bug Fix</text>
+    <text x="285" y="210" class="text">Login issue...</text>
+    <text x="285" y="225" class="small">Pedro</text>
+    
+    <!-- Em Revisão -->
+    <rect x="395" y="130" width="110" height="450" class="column"/>
+    <text x="405" y="152" class="label">Em Revisão</text>
+    <rect x="425" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="437" y="160" class="count-text" text-anchor="middle">1</text>
+    
+    <!-- Card -->
+    <rect x="403" y="175" width="94" height="60" class="card" rx="6"/>
+    <text x="410" y="192" class="title">RFC #12</text>
+    <text x="410" y="210" class="text">Proposta nova...</text>
+    <text x="410" y="225" class="small">Maria</text>
+    
+    <!-- Concluído -->
+    <rect x="520" y="130" width="110" height="450" class="column"/>
+    <text x="530" y="152" class="label">Concluído</text>
+    <rect x="560" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="572" y="160" class="count-text" text-anchor="middle">4</text>
+    
+    <!-- Card -->
+    <rect x="528" y="175" width="94" height="60" class="card" rx="6"/>
+    <text x="535" y="192" class="title">Docs</text>
+    <text x="535" y="210" class="text">Documentação...</text>
+    <text x="535" y="225" class="small">João</text>
+    
+    <!-- Cancelado -->
+    <rect x="645" y="130" width="135" height="450" class="column"/>
+    <text x="655" y="152" class="label">Cancelado</text>
+    <rect x="685" y="146" width="50" height="20" class="count" rx="3"/>
+    <text x="697" y="160" class="count-text" text-anchor="middle">1</text>
+    
+    <!-- Card com justificativa -->
+    <rect x="653" y="175" width="119" height="80" class="card" rx="6"/>
+    <text x="660" y="192" class="title">Test Fail</text>
+    <text x="660" y="210" class="text">Cancelado</text>
+    <text x="660" y="225" class="small">⚠️ Justificativa:</text>
+    <text x="660" y="240" class="small">Prioridade mudou</text>
+    <text x="660" y="250" class="small">João</text>
+  </g>
+  
+  <!-- Legenda -->
+  <g>
+    <text x="20" y="600" class="label">→ Movimento forward (sem modal)  |  ← Regressão (com modal de justificativa)  |  Dropdown de responsável atualiza board em tempo real</text>
+  </g>
+</svg>

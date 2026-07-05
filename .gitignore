@@ -1,0 +1,70 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# Logs
+*.log
+logs/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+!.env*.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+secrets/
+
+# Node / Angular
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/.sass-cache/
+frontend/tmp/
+frontend/out-tsc/
+frontend/bazel-out/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Go / backend
+backend/uploads/
+backend/tmp/
+backend/coverage.out
+backend/*.test
+
+# Python / misc tooling
+__pycache__/
+*.pyc
+
+# Database / local data
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+postgres_data/
+uploads_data/
+
+# Cypress artifacts
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/downloads/
+
+# Build artifacts
+coverage/
+dist/
+out/
+tmp/

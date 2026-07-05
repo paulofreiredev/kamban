@@ -1,0 +1,260 @@
+<div class="home-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">
+      <h1>Kanban Board</h1>
+      <div class="header-actions">
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/dashboard" class="btn btn-secondary">Dashboard</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/users" class="btn btn-secondary">Gerenciar usuários</a>
+        <button class="btn btn-secondary" type="button" (click)="openPasswordModal()">Alterar senha</button>
+        <button class="btn btn-secondary" type="button" (click)="auth.logout()">Sair</button>
+        <button class="btn btn-primary" type="button" (click)="openNewCardModal()">+ Nova Atividade</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label>De:</label>
+        <input type="date" [(ngModel)]="fromDate" (change)="onFilterChange()" />
+      </div>
+      <div class="filter-group">
+        <label>Até:</label>
+        <input type="date" [(ngModel)]="toDate" (change)="onFilterChange()" />
+      </div>
+      <div class="filter-group">
+        <label>Responsável:</label>
+        <select [(ngModel)]="selectedAssigneeId" (change)="onFilterChange()" class="filter-select">
+          <option value="">Todos</option>
+          <option *ngFor="let user of users()" [value]="user.id">{{ user.name }}</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading()" class="loading">Carregando...</div>
+
+  <!-- Kanban Board -->
+  <div class="board" *ngIf="!loading()" cdkDropListGroup>
+    <div *ngFor="let column of columns" class="column">
+      <div class="column-header">
+        <h2>{{ column.label }}</h2>
+        <span class="card-count">{{ grouped()[column.key].length }}</span>
+      </div>
+
+      <div
+        cdkDropList
+        [id]="column.key"
+        [cdkDropListConnectedTo]="dropListIds"
+        [cdkDropListData]="grouped()[column.key]"
+        class="card-list"
+        (cdkDropListDropped)="onCardDrop($event, column.key)"
+        cdkDropListSortingDisabled
+      >
+        <div
+          *ngFor="let card of grouped()[column.key]"
+          class="card"
+          (click)="onCardClick(card)"
+          (cdkDragStarted)="onDragStarted()"
+          (cdkDragEnded)="onDragEnded()"
+          cdkDrag
+        >
+          <div class="card-header">
+            <span class="card-title">{{ card.title }}</span>
+            <span class="card-id">#{{ card.id }}</span>
+          </div>
+          <p class="card-description">{{ card.description | slice : 0 : 100 }}</p>
+          <div class="card-footer">
+            <span class="card-date">{{ card.createdAt | date : 'short' }}</span>
+            <span class="card-age">{{ getTimeInCurrentColumn(card) }}</span>
+            <span *ngIf="card.assigneeId" class="card-assignee">
+              {{ getAssigneeName(card) }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Card Modal -->
+  <div *ngIf="showNewCardModal()" class="modal-backdrop" (click)="closeNewCardModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Nova Atividade</h2>
+        <button class="btn-close" (click)="closeNewCardModal()">×</button>
+      </div>
+      <form [formGroup]="newCardForm" (ngSubmit)="submitNewCard()" class="modal-content">
+        <div class="form-group">
+          <label>Título *</label>
+          <input type="text" formControlName="title" class="form-input" />
+          <span class="error" *ngIf="newCardForm.get('title')?.invalid && newCardForm.get('title')?.touched">
+            Título é obrigatório
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea formControlName="description" class="form-input" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Responsável</label>
+          <select formControlName="assigneeId" class="form-input">
+            <option value="">Nenhum</option>
+            <option *ngFor="let user of users()" [value]="user.id">{{ user.name }}</option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeNewCardModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!newCardForm.valid">Criar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Justification Modal -->
+  <div *ngIf="showJustificationModal()" class="modal-backdrop" (click)="closeJustificationModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Justificativa</h2>
+        <button class="btn-close" (click)="closeJustificationModal()">×</button>
+      </div>
+      <form [formGroup]="justificationForm" (ngSubmit)="submitJustification()" class="modal-content">
+        <p class="justification-text">
+          Por favor, justifique o motivo da mudança de status.
+        </p>
+
+        <div class="form-group">
+          <label>Justificativa *</label>
+          <textarea formControlName="justification" class="form-input" rows="4" placeholder="Digite sua justificativa..."></textarea>
+          <span class="error" *ngIf="justificationForm.get('justification')?.invalid && justificationForm.get('justification')?.touched">
+            Justificativa é obrigatória
+          </span>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeJustificationModal()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" [disabled]="!justificationForm.valid">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Details Drawer -->
+  <div *ngIf="showDetailsDrawer()" class="drawer-backdrop" (click)="closeDetailsDrawer()">
+    <div class="drawer" (click)="$event.stopPropagation()">
+      <div class="drawer-header">
+        <h2>{{ selectedCard()?.title }}</h2>
+        <div class="drawer-header-actions">
+          <button
+            *ngIf="auth.isAdmin()"
+            class="btn btn-danger btn-sm"
+            type="button"
+            (click)="deleteSelectedCard()"
+            title="Excluir card"
+          >🗑 Excluir</button>
+          <button class="btn-close" (click)="closeDetailsDrawer()">×</button>
+        </div>
+      </div>
+
+      <div class="drawer-content">
+        <div *ngIf="selectedCard()" class="card-details">
+          <!-- Card Info -->
+          <div class="details-section">
+            <h3>Informações</h3>
+            <p><strong>ID:</strong> #{{ selectedCard()?.id }}</p>
+            <p><strong>Status:</strong> {{ selectedCard()?.status }}</p>
+            <p><strong>Descrição:</strong> {{ selectedCard()?.description }}</p>
+            <p><strong>Criado em:</strong> {{ selectedCard()?.createdAt | date : 'medium' }}</p>
+                        <p><strong>Criado por:</strong> {{ selectedCard()?.createdByName || 'N/A' }}</p>
+            <div class="assignee-editor">
+              <label for="assigneeSelect"><strong>Responsável:</strong></label>
+              <select
+                id="assigneeSelect"
+                class="form-input"
+                [(ngModel)]="detailAssigneeId"
+                [disabled]="savingAssignee()"
+              >
+                <option value="">Selecione um responsável</option>
+                <option *ngFor="let user of users()" [ngValue]="user.id">{{ user.name }}</option>
+              </select>
+              <button
+                class="btn btn-primary btn-sm"
+                type="button"
+                (click)="saveCardAssignee()"
+                [disabled]="detailAssigneeId === '' || savingAssignee()"
+              >
+                {{ savingAssignee() ? 'Salvando...' : 'Salvar responsável' }}
+              </button>
+            </div>
+            <p *ngIf="selectedCard()?.justification">
+              <strong>Justificativa:</strong> {{ selectedCard()?.justification }}
+            </p>
+          </div>
+
+          <!-- Comments Section -->
+          <div class="details-section">
+            <h3>Comentários</h3>
+            <div class="comments-list">
+              <div *ngFor="let comment of selectedCard()?.comments" class="comment">
+                <strong>{{ comment.author }}:</strong> {{ comment.content }}
+                <small>{{ comment.createdAt | date : 'short' }}</small>
+              </div>
+            </div>
+
+            <div class="comment-form">
+              <textarea [(ngModel)]="newComment" placeholder="Adicionar comentário..." class="form-input" rows="2"></textarea>
+              <button class="btn btn-primary btn-sm" (click)="addComment()">Comentar</button>
+            </div>
+          </div>
+
+          <!-- Attachments Section -->
+          <div class="details-section">
+            <h3>Anexos</h3>
+            <div class="attachments-list">
+              <a *ngFor="let att of selectedCard()?.attachments" [href]="att.url" target="_blank" class="attachment">
+                📎 {{ att.originalName }}
+              </a>
+            </div>
+            <div class="attachment-form">
+              <input type="file" #fileInput class="file-input" (change)="onFileChange($event)" />
+              <button class="btn btn-secondary btn-sm" type="button" (click)="fileInput?.click()">+ Anexar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div *ngIf="showPasswordModal()" class="modal-backdrop" (click)="closePasswordModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Alterar senha</h2>
+        <button class="btn-close" (click)="closePasswordModal()">×</button>
+      </div>
+      <div class="modal-content">
+        <div class="form-group">
+          <label>Senha atual</label>
+          <input type="password" class="form-input" [(ngModel)]="currentPassword" />
+        </div>
+        <div class="form-group">
+          <label>Nova senha</label>
+          <input type="password" class="form-input" [(ngModel)]="newPassword" />
+        </div>
+        <div class="form-group">
+          <label>Confirmar nova senha</label>
+          <input type="password" class="form-input" [(ngModel)]="confirmPassword" />
+        </div>
+        <p *ngIf="passwordError()" class="msg-error">{{ passwordError() }}</p>
+        <p *ngIf="passwordSuccess()" class="msg-success">{{ passwordSuccess() }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePasswordModal()">Fechar</button>
+        <button type="button" class="btn btn-primary" (click)="submitPasswordChange()">Salvar nova senha</button>
+      </div>
+    </div>
+  </div>
+</div>

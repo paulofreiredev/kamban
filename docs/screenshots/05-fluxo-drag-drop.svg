@@ -1,0 +1,139 @@
+<svg width="900" height="600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .title-main { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #1a1a1a; }
+      .step-label { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #2456ff; }
+      .step-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #1a1a1a; }
+      .step-desc { font-family: Arial, sans-serif; font-size: 11px; fill: #666; }
+      .step-box { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 4; }
+      .step-box-highlight { fill: #ffffff; stroke: #2456ff; stroke-width: 2; rx: 4; }
+      .card { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 6; }
+      .card-title { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; fill: #1a1a1a; }
+      .card-desc { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+      .arrow { stroke: #2456ff; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-dashed { stroke: #2456ff; stroke-width: 2; fill: none; stroke-dasharray: 5,5; marker-end: url(#arrowhead); }
+      .icon { font-size: 20px; }
+      .check { fill: #28a745; }
+      .warning { fill: #ffc107; }
+      .forward-arrow { stroke: #28a745; stroke-width: 2; }
+      .backward-arrow { stroke: #dc3545; stroke-width: 2; }
+      .column { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; }
+      .button { fill: #2456ff; }
+      .button-text { font-family: Arial, sans-serif; font-size: 10px; fill: #ffffff; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#2456ff" />
+    </marker>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="900" height="600" class="bg"/>
+  
+  <!-- Title -->
+  <text x="20" y="35" class="title-main">Fluxo de Drag-Drop: Movimento Forward vs Retrocesso</text>
+  
+  <!-- Cenário 1: Forward (sem modal) -->
+  <g>
+    <text x="20" y="70" class="step-label">CENÁRIO 1: Movimento Forward (sem modal)</text>
+    
+    <!-- Step 1: Arrastar -->
+    <rect x="20" y="90" width="180" height="100" class="step-box"/>
+    <text x="30" y="110" class="step-title">1️⃣ Arrastar Card</text>
+    <text x="30" y="130" class="step-desc">Usuário arrasta card de</text>
+    <text x="30" y="145" class="step-desc">"A Fazer" para</text>
+    <text x="30" y="160" class="step-desc">"Em Progresso"</text>
+    <text x="30" y="175" class="step-desc">✓ Forward movimento</text>
+    
+    <!-- Arrow -->
+    <path d="M 210 140 L 240 140" class="arrow forward-arrow"/>
+    <text x="215" y="130" class="step-desc">✓ Forward</text>
+    
+    <!-- Step 2: Confirmar -->
+    <rect x="260" y="90" width="180" height="100" class="step-box-highlight"/>
+    <text x="270" y="110" class="step-title">2️⃣ Confirmação</text>
+    <text x="270" y="130" class="step-desc">Movimento imediato</text>
+    <text x="270" y="145" class="step-desc">sem modal</text>
+    <text x="270" y="160" class="step-desc">Status: Em Progresso</text>
+    <text x="270" y="175" class="step-desc">⚡ Rápido e fluido</text>
+    
+    <!-- Arrow -->
+    <path d="M 450 140 L 480 140" class="arrow forward-arrow"/>
+    <text x="455" y="130" class="step-desc">Atualiza</text>
+    
+    <!-- Step 3: Salvo -->
+    <rect x="500" y="90" width="180" height="100" class="step-box"/>
+    <circle cx="590" cy="125" r="25" class="check"/>
+    <text x="590" y="132" class="step-desc" text-anchor="middle" font-size="20" fill="white">✓</text>
+    <text x="510" y="165" class="step-title">3️⃣ Salvo</text>
+    <text x="510" y="180" class="step-desc">Card em novo status</text>
+    <text x="510" y="195" class="step-desc">sem justificativa</text>
+  </g>
+  
+  <!-- Cenário 2: Retrocesso (com modal) -->
+  <g>
+    <text x="20" y="260" class="step-label">CENÁRIO 2: Retrocesso (com modal de justificativa)</text>
+    
+    <!-- Step 1: Arrastar para trás -->
+    <rect x="20" y="280" width="180" height="100" class="step-box"/>
+    <text x="30" y="300" class="step-title">1️⃣ Arrastar Card</text>
+    <text x="30" y="320" class="step-desc">Usuário arrasta card de</text>
+    <text x="30" y="335" class="step-desc">"Em Progresso" para</text>
+    <text x="30" y="350" class="step-desc">"A Fazer"</text>
+    <text x="30" y="365" class="step-desc">⚠️ Retrocesso!</text>
+    
+    <!-- Arrow -->
+    <path d="M 210 330 L 240 330" class="arrow backward-arrow" stroke="#dc3545"/>
+    <text x="215" y="320" class="step-desc" fill="#dc3545">⚠️ Retrocesso</text>
+    
+    <!-- Step 2: Modal aparece -->
+    <rect x="260" y="280" width="180" height="100" class="step-box-highlight"/>
+    <text x="270" y="300" class="step-title">2️⃣ Modal Aparece</text>
+    <text x="270" y="320" class="step-desc">Solicitando justificativa</text>
+    <text x="270" y="335" class="step-desc">Campos:</text>
+    <text x="270" y="350" class="step-desc">• Motivo (obrigatório)</text>
+    <text x="270" y="365" class="step-desc">• Categoria (opcional)</text>
+    
+    <!-- Arrow -->
+    <path d="M 450 330 L 480 330" class="arrow backward-arrow" stroke="#dc3545"/>
+    <text x="455" y="320" class="step-desc" fill="#dc3545">Usuario</text>
+    <text x="455" y="335" class="step-desc" fill="#dc3545">Justifica</text>
+    
+    <!-- Step 3: Salvo com justificativa -->
+    <rect x="500" y="280" width="180" height="100" class="step-box"/>
+    <circle cx="590" cy="315" r="25" class="check"/>
+    <text x="590" y="322" class="step-desc" text-anchor="middle" font-size="20" fill="white">✓</text>
+    <text x="510" y="355" class="step-title">3️⃣ Salvo</text>
+    <text x="510" y="370" class="step-desc">Card em novo status</text>
+    <text x="510" y="385" class="step-desc">+ Justificativa registrada</text>
+  </g>
+  
+  <!-- Exemplos de status -->
+  <g>
+    <text x="20" y="450" class="step-label">Exemplos de Movimentos:</text>
+    
+    <!-- Forward examples -->
+    <rect x="20" y="470" width="270" height="100" class="step-box"/>
+    <text x="30" y="490" class="step-title">✓ Movimentos Forward (sem modal):</text>
+    <text x="30" y="510" class="step-desc">• Backlog → A Fazer</text>
+    <text x="30" y="525" class="step-desc">• A Fazer → Em Progresso</text>
+    <text x="30" y="540" class="step-desc">• Em Progresso → Em Revisão</text>
+    <text x="30" y="555" class="step-desc">• Em Revisão → Concluído</text>
+    
+    <!-- Backward examples -->
+    <rect x="320" y="470" width="270" height="100" class="step-box"/>
+    <text x="330" y="490" class="step-title">⚠️ Retrocessos (com modal):</text>
+    <text x="330" y="510" class="step-desc">• Concluído → Em Revisão</text>
+    <text x="330" y="525" class="step-desc">• Em Revisão → Em Progresso</text>
+    <text x="330" y="540" class="step-desc">• Em Progresso → A Fazer</text>
+    <text x="330" y="555" class="step-desc">• Qualquer movimento para trás</text>
+    
+    <!-- Cancelado rules -->
+    <rect x="620" y="470" width="270" height="100" class="step-box"/>
+    <text x="630" y="490" class="step-title">🚫 Status Especiais:</text>
+    <text x="630" y="510" class="step-desc">• Para Cancelado = Modal obrigatória</text>
+    <text x="630" y="525" class="step-desc">• De Cancelado = Sem regressão</text>
+    <text x="630" y="540" class="step-desc">• Justificativa vai no histórico</text>
+    <text x="630" y="555" class="step-desc">• Readonly após conclusão</text>
+  </g>
+</svg>

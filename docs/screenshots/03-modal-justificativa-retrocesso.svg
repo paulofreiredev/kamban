@@ -1,0 +1,80 @@
+<svg width="600" height="650" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .overlay { fill: rgba(0,0,0,0.5); }
+      .modal { fill: #ffffff; stroke: #333; stroke-width: 2; rx: 8; }
+      .modal-header { fill: #fff3cd; stroke: #ffc107; stroke-width: 1; }
+      .modal-title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #1a1a1a; }
+      .icon { font-size: 24px; }
+      .label { font-family: Arial, sans-serif; font-size: 13px; fill: #444; font-weight: 600; }
+      .input { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 4; }
+      .input-text { font-family: Arial, sans-serif; font-size: 12px; fill: #666; }
+      .placeholder { font-family: Arial, sans-serif; font-size: 12px; fill: #999; font-style: italic; }
+      .hint { font-family: Arial, sans-serif; font-size: 11px; fill: #666; }
+      .btn-danger { fill: #dc3545; }
+      .btn-secondary { fill: #e8ecf1; }
+      .btn-text { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; }
+      .btn-danger-text { fill: #ffffff; }
+      .btn-secondary-text { fill: #1a1a1a; }
+      .warning-box { fill: #fff3cd; stroke: #ffc107; stroke-width: 1; rx: 4; }
+      .warning-text { font-family: Arial, sans-serif; font-size: 11px; fill: #856404; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="600" height="650" class="bg"/>
+  
+  <!-- Overlay -->
+  <rect width="600" height="650" class="overlay"/>
+  
+  <!-- Modal -->
+  <rect x="75" y="50" width="450" height="550" class="modal" rx="8"/>
+  
+  <!-- Modal Header (Warning style) -->
+  <rect x="75" y="50" width="450" height="60" class="modal-header" rx="8"/>
+  <text x="100" y="75" class="icon">⚠️</text>
+  <text x="140" y="85" class="modal-title">Retrocesso Detectado!</text>
+  <text x="100" y="105" class="input-text">A atividade será movida para trás. Explique o motivo:</text>
+  
+  <!-- Warning box -->
+  <rect x="100" y="130" width="350" height="50" class="warning-box" rx="4"/>
+  <text x="110" y="150" class="warning-text">De: Em Revisão → Retroceder para Em Progresso</text>
+  <text x="110" y="170" class="warning-text">Atividade: RFC-12 • Responsável: Maria</text>
+  
+  <!-- Form Content -->
+  <g>
+    <!-- Justificativa -->
+    <text x="100" y="220" class="label">Justificativa *</text>
+    <rect x="100" y="230" width="350" height="100" class="input" rx="4"/>
+    <text x="110" y="250" class="placeholder">Explique por que a atividade precisa retroceder...</text>
+    <text x="110" y="270" class="placeholder">Exemplos:</text>
+    <text x="110" y="285" class="placeholder">• "Feedback adicional do cliente"</text>
+    <text x="110" y="300" class="placeholder">• "Encontrados bugs durante revisão"</text>
+    <text x="110" y="315" class="placeholder">• "Dependência não atendida"</text>
+    
+    <!-- Categoria (Optional) -->
+    <text x="100" y="360" class="label">Categoria (opcional)</text>
+    <rect x="100" y="370" width="350" height="36" class="input" rx="4"/>
+    <text x="110" y="395" class="placeholder">Selecione uma categoria ▼</text>
+    
+    <!-- Opções -->
+    <text x="110" y="415" class="hint">• Bug encontrado</text>
+    <text x="110" y="430" class="hint">• Feedback do cliente</text>
+    <text x="110" y="445" class="hint">• Requisito não atendido</text>
+    <text x="110" y="460" class="hint">• Dependência bloqueada</text>
+  </g>
+  
+  <!-- Buttons -->
+  <g>
+    <rect x="100" y="490" width="160" height="40" class="btn-secondary" rx="4"/>
+    <text x="180" y="517" class="btn-secondary-text" text-anchor="middle" font-weight="bold">Manter em Revisão</text>
+    
+    <rect x="290" y="490" width="160" height="40" class="btn-danger" rx="4"/>
+    <text x="370" y="517" class="btn-danger-text" text-anchor="middle" font-weight="bold">Confirmar Retrocesso</text>
+  </g>
+  
+  <!-- Info message -->
+  <text x="100" y="580" class="hint">* Justificativa é obrigatória para retrocesso</text>
+  <text x="100" y="595" class="hint">A justificativa será registrada no histórico da atividade</text>
+</svg>

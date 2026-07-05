@@ -1,0 +1,136 @@
+<svg width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg { fill: #f5f7fb; }
+      .header { fill: #ffffff; stroke: #e0e3e8; stroke-width: 1; }
+      .label { font-family: Arial, sans-serif; font-size: 13px; fill: #444; font-weight: 600; }
+      .dropdown { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 4; }
+      .dropdown-text { font-family: Arial, sans-serif; font-size: 12px; fill: #666; }
+      .dropdown-option { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; }
+      .dropdown-option-hover { fill: #e8ecf1; }
+      .dropdown-option-text { font-family: Arial, sans-serif; font-size: 12px; fill: #1a1a1a; }
+      .dropdown-option-desc { font-family: Arial, sans-serif; font-size: 10px; fill: #888; }
+      .avatar { fill: #2456ff; }
+      .avatar-text { font-family: Arial, sans-serif; font-size: 10px; fill: #ffffff; font-weight: bold; }
+      .checkbox { rx: 4; }
+      .checkbox-checked { fill: #2456ff; stroke: #2456ff; stroke-width: 1; }
+      .checkbox-unchecked { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; }
+      .count-badge { fill: #e8ecf1; rx: 12; }
+      .count-text { font-family: Arial, sans-serif; font-size: 10px; fill: #1a1a1a; font-weight: bold; }
+      .button { fill: #2456ff; }
+      .button-text { font-family: Arial, sans-serif; font-size: 11px; fill: #ffffff; font-weight: bold; }
+      .column { fill: #f8f9fa; stroke: #e0e3e8; stroke-width: 1; }
+      .card { fill: #ffffff; stroke: #d5dce3; stroke-width: 1; rx: 6; }
+      .card-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #1a1a1a; }
+      .card-assignee { font-family: Arial, sans-serif; font-size: 11px; fill: #666; }
+      .small { font-family: Arial, sans-serif; font-size: 10px; fill: #888; }
+    </style>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="500" class="bg"/>
+  
+  <!-- Header -->
+  <rect width="800" height="50" class="header"/>
+  <text x="20" y="35" class="label">Filtro por Responsável</text>
+  
+  <!-- Dropdown section -->
+  <g>
+    <text x="20" y="80" class="label">Responsável:</text>
+    
+    <!-- Dropdown button -->
+    <rect x="20" y="95" width="200" height="36" class="dropdown" rx="4"/>
+    <text x="30" y="118" class="dropdown-text">Todos (5) ▼</text>
+    
+    <!-- Dropdown menu (open) -->
+    <g>
+      <!-- "Todos" option -->
+      <rect x="20" y="135" width="200" height="30" class="dropdown-option"/>
+      <rect x="30" y="142" width="16" height="16" class="checkbox-checked"/>
+      <text x="55" y="156" class="dropdown-option-text">Todos</text>
+      <circle cx="175" cy="150" r="10" class="count-badge"/>
+      <text x="175" y="154" class="count-text" text-anchor="middle">5</text>
+      
+      <!-- João option -->
+      <rect x="20" y="165" width="200" height="30" class="dropdown-option"/>
+      <rect x="30" y="172" width="16" height="16" class="checkbox-unchecked"/>
+      <circle cx="50" cy="180" r="8" class="avatar"/>
+      <text x="50" y="184" class="avatar-text" text-anchor="middle">J</text>
+      <text x="65" y="184" class="dropdown-option-text">João Silva</text>
+      <circle cx="175" cy="180" r="10" class="count-badge"/>
+      <text x="175" y="184" class="count-text" text-anchor="middle">2</text>
+      
+      <!-- Maria option -->
+      <rect x="20" y="195" width="200" height="30" class="dropdown-option-hover"/>
+      <rect x="30" y="202" width="16" height="16" class="checkbox-unchecked"/>
+      <circle cx="50" cy="210" r="8" class="avatar" fill="#28a745"/>
+      <text x="50" y="214" class="avatar-text" text-anchor="middle">M</text>
+      <text x="65" y="214" class="dropdown-option-text">Maria Costa</text>
+      <circle cx="175" cy="210" r="10" class="count-badge"/>
+      <text x="175" y="214" class="count-text" text-anchor="middle">1</text>
+      
+      <!-- Pedro option -->
+      <rect x="20" y="225" width="200" height="30" class="dropdown-option"/>
+      <rect x="30" y="232" width="16" height="16" class="checkbox-unchecked"/>
+      <circle cx="50" cy="240" r="8" class="avatar" fill="#ffc107"/>
+      <text x="50" y="244" class="avatar-text" text-anchor="middle">P</text>
+      <text x="65" y="244" class="dropdown-option-text">Pedro Santos</text>
+      <circle cx="175" cy="240" r="10" class="count-badge"/>
+      <text x="175" y="244" class="count-text" text-anchor="middle">1</text>
+      
+      <!-- Ana option -->
+      <rect x="20" y="255" width="200" height="30" class="dropdown-option"/>
+      <rect x="30" y="262" width="16" height="16" class="checkbox-unchecked"/>
+      <circle cx="50" cy="270" r="8" class="avatar" fill="#dc3545"/>
+      <text x="50" y="274" class="avatar-text" text-anchor="middle">A</text>
+      <text x="65" y="274" class="dropdown-option-text">Ana Oliveira</text>
+      <circle cx="175" cy="270" r="10" class="count-badge"/>
+      <text x="175" y="274" class="count-text" text-anchor="middle">1</text>
+    </g>
+  </g>
+  
+  <!-- Board exemplo com filtro -->
+  <g>
+    <!-- Coluna: A Fazer (João) -->
+    <rect x="270" y="85" width="130" height="350" class="column"/>
+    <text x="280" y="107" class="label">A Fazer (João)</text>
+    
+    <!-- Card 1 -->
+    <rect x="278" y="125" width="114" height="60" class="card" rx="6"/>
+    <text x="285" y="142" class="card-title">Task 001</text>
+    <text x="285" y="160" class="card-assignee">João Silva</text>
+    <text x="285" y="175" class="small">RF-001</text>
+    
+    <!-- Card 2 -->
+    <rect x="278" y="195" width="114" height="60" class="card" rx="6"/>
+    <text x="285" y="212" class="card-title">Bug Fix</text>
+    <text x="285" y="230" class="card-assignee">João Silva</text>
+    <text x="285" y="245" class="small">BUG-042</text>
+    
+    <!-- Coluna: Em Progresso (Maria) -->
+    <rect x="420" y="85" width="130" height="350" class="column"/>
+    <text x="430" y="107" class="label">Em Progresso (Maria)</text>
+    
+    <!-- Card 1 -->
+    <rect x="428" y="125" width="114" height="60" class="card" rx="6"/>
+    <text x="435" y="142" class="card-title">Feature B</text>
+    <text x="435" y="160" class="card-assignee">Maria Costa</text>
+    <text x="435" y="175" class="small">RF-002</text>
+    
+    <!-- Coluna: Em Revisão (Pedro) -->
+    <rect x="570" y="85" width="130" height="350" class="column"/>
+    <text x="580" y="107" class="label">Em Revisão (Pedro)</text>
+    
+    <!-- Card 1 -->
+    <rect x="578" y="125" width="114" height="60" class="card" rx="6"/>
+    <text x="585" y="142" class="card-title">RFC-12</text>
+    <text x="585" y="160" class="card-assignee">Pedro Santos</text>
+    <text x="585" y="175" class="small">RFC-12</text>
+  </g>
+  
+  <!-- Legend -->
+  <g>
+    <text x="20" y="475" class="small">✓ Filtro atualiza o board em tempo real</text>
+    <text x="20" y="490" class="small">✓ Contagem de atividades por responsável mostrada no dropdown</text>
+  </g>
+</svg>
