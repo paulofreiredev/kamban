@@ -124,4 +124,26 @@
       </div>
     </div>
   </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div *ngIf="showDeleteConfirmModal" class="modal-overlay" (click)="closeDeleteConfirmModal()">
+    <div class="modal modal-danger" (click)="$event.stopPropagation()">
+      <h2>Confirmar Deleção</h2>
+      <div *ngIf="projectToDelete" class="delete-confirmation">
+        <p class="warning-message">Você está prestes a deletar o projeto <strong>{{ projectToDelete.title }}</strong></p>
+        <div class="project-deletion-info">
+          <p><strong>Atenção:</strong> Esta ação é <strong>irreversível</strong> e irá:</p>
+          <ul>
+            <li>Deletar o projeto e todas as suas tarefas ({{ projectToDelete.cardCount }})</li>
+            <li>Remover todos os membros do projeto ({{ projectToDelete.members?.length || 0 }})</li>
+            <li>Deletar todos os comentários e anexos das tarefas</li>
+          </ul>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-danger" (click)="confirmDeleteProject()">Deletar Permanentemente</button>
+          <button type="button" class="btn btn-secondary" (click)="closeDeleteConfirmModal()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

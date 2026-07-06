@@ -24,6 +24,8 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   showEditProjectForm = false;
   showMembersModal = false;
   selectedProject: Project | null = null;
+    showDeleteConfirmModal = false;
+    projectToDelete: Project | null = null;
   
   newProjectForm: FormGroup;
   editProjectForm: FormGroup;
@@ -173,13 +175,22 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   }
 
   deleteProject(projectId: number): void {
-    if (!confirm('Tem certeza que deseja deletar este projeto? Esta ação é irreversível.')) return;
+    const project = this.projects.find(p => p.id === projectId);
+    if (!project) return;
+    this.projectToDelete = project;
+    this.showDeleteConfirmModal = true;
+  }
+
+  confirmDeleteProject(): void {
+    if (!this.projectToDelete) return;
+    const projectId = this.projectToDelete.id;
     
     this.api.deleteProject(projectId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
           this.successMessage = 'Projeto deletado com sucesso';
+          this.closeDeleteConfirmModal();
           this.loadProjects();
           setTimeout(() => this.successMessage = null, 3000);
         },
@@ -188,6 +199,11 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
           console.error(err);
         }
       });
+  }
+
+  closeDeleteConfirmModal(): void {
+    this.showDeleteConfirmModal = false;
+    this.projectToDelete = null;
   }
 
   openMembersModal(project: Project): void {

@@ -228,11 +228,47 @@ func (h *ProjectHandler) DeleteProject(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "ID do projeto inválido"})
 	}
 
-	if err := h.db.Delete(&models.Project{}, uint(projectID)).Error; err != nil {
+	// Inicia uma transação para garantir integridade
+	tx := h.db.Begin()
+
+	// Deleta todos os comentários das cards do projeto
+	if err := tx.Where("card_id IN (SELECT id FROM cards WHERE project_id = ?)", uint(projectID)).
+		Delete(&models.Comment{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar comentários"})
+	}
+
+	// Deleta todos os anexos das cards do projeto
+	if err := tx.Where("card_id IN (SELECT id FROM cards WHERE project_id = ?)", uint(projectID)).
+		Delete(&models.Attachment{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar anexos"})
+	}
+
+	// Deleta todas as cards do projeto
+	if err := tx.Where("project_id = ?", uint(projectID)).Delete(&models.Card{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar tarefas"})
+	}
+
+	// Deleta todos os membros do projeto
+	if err := tx.Where("project_id = ?", uint(projectID)).Delete(&models.ProjectMember{}).Error; err != nil {
+		tx.Rollback()
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar membros"})
+	}
+
+	// Deleta o projeto
+	if err := tx.Delete(&models.Project{}, uint(projectID)).Error; err != nil {
+		tx.Rollback()
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao deletar projeto"})
 	}
 
-	return c.JSON(fiber.Map{"success": true})
+	// Confirma a transação
+	if err := tx.Commit().Error; err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "Erro ao confirmar deleção"})
+	}
+
+	return c.JSON(fiber.Map{"success": true, "message": "Projeto e todas as suas tarefas foram deletados com sucesso"})
 }
 
 // AddProjectMember - Adiciona membro ao projeto (admin only)
