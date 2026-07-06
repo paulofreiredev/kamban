@@ -16,6 +16,7 @@ type SaveResult struct {
 
 type Provider interface {
 	Save(fileHeader *multipart.FileHeader) (SaveResult, error)
+	Delete(storagePath string) error
 }
 
 type LocalStorageProvider struct {
@@ -62,4 +63,14 @@ func (l *LocalStorageProvider) Save(fileHeader *multipart.FileHeader) (SaveResul
 		StoragePath: storagePath,
 		PublicURL:   fmt.Sprintf("%s/%s", publicPrefix, finalName),
 	}, nil
+}
+
+func (l *LocalStorageProvider) Delete(storagePath string) error {
+	if storagePath == "" {
+		return nil
+	}
+	if err := os.Remove(storagePath); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }

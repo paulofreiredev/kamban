@@ -40,6 +40,7 @@ export interface Attachment {
   url: string;
   uploadedBy: number;
   createdAt: string;
+  uploader?: User;
 }
 
 export interface Comment {

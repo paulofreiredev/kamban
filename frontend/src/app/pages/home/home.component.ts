@@ -6,6 +6,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { Card, CardStatus, User } from '../../models';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
 const STATUS_COLUMNS: { key: CardStatus; label: string }[] = [
   { key: 'backlog', label: 'Backlog' },
@@ -28,7 +29,7 @@ const statusOrder: Record<CardStatus, number> = {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DragDropModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DragDropModule, ConfirmDialogComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.css'
 })
@@ -48,6 +49,14 @@ export class HomeComponent implements OnDestroy {
   passwordSuccess = signal('');
   newSubtaskTitle = signal('');
   creatingSubtask = signal(false);
+  confirmDialog = signal<{
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  } | null>(null);
 
   fromDate = this.toDateInput(this.daysAgo(30));
   toDate = this.toDateInput(new Date());
@@ -76,7 +85,7 @@ export class HomeComponent implements OnDestroy {
 
   constructor(
     public auth: AuthService,
-    private api: ApiService,
+    public api: ApiService,
     private fb: FormBuilder,
     private router: Router
   ) {
@@ -299,6 +308,16 @@ export class HomeComponent implements OnDestroy {
     });
   }
 
+  canDeleteComment(comment: { createdBy: number }): boolean {
+    const currentUser = this.auth.user();
+    return !!currentUser && (this.auth.isAdmin() || comment.createdBy === currentUser.id);
+  }
+
+  canDeleteAttachment(attachment: { uploadedBy: number }): boolean {
+    const currentUser = this.auth.user();
+    return !!currentUser && (this.auth.isAdmin() || attachment.uploadedBy === currentUser.id);
+  }
+
   saveCardAssignee() {
     const card = this.selectedCard();
     if (!card || this.detailAssigneeId === '') return;
@@ -330,15 +349,43 @@ export class HomeComponent implements OnDestroy {
     this.newComment = '';
   }
 
+  openConfirmDialog(config: {
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  }) {
+    this.confirmDialog.set(config);
+  }
+
+  closeConfirmDialog() {
+    this.confirmDialog.set(null);
+  }
+
+  confirmCurrentAction() {
+    const dialog = this.confirmDialog();
+    if (!dialog) return;
+    this.closeConfirmDialog();
+    dialog.action();
+  }
+
   deleteSelectedCard() {
     const card = this.selectedCard();
     if (!card) return;
-    if (!confirm(`Excluir o card "${card.title}"? Esta ação não pode ser desfeita.`)) return;
-    this.api.deleteCard(card.id).subscribe({
-      next: () => {
-        this.cards.set(this.cards().filter(c => c.id !== card.id));
-        this.closeDetailsDrawer();
-      }
+    this.openConfirmDialog({
+      title: 'Excluir atividade',
+      message: `Deseja excluir a atividade "${card.title}"?`,
+      description: 'Essa ação remove a atividade de forma permanente.',
+      confirmText: 'Excluir atividade',
+      tone: 'danger',
+      action: () => this.api.deleteCard(card.id).subscribe({
+        next: () => {
+          this.cards.set(this.cards().filter(c => c.id !== card.id));
+          this.closeDetailsDrawer();
+        }
+      })
     });
   }
 
@@ -353,6 +400,21 @@ export class HomeComponent implements OnDestroy {
     });
   }
 
+  deleteComment(commentId: number) {
+    const card = this.selectedCard();
+    if (!card) return;
+    this.openConfirmDialog({
+      title: 'Excluir comentário',
+      message: 'Deseja excluir este comentário?',
+      description: 'O comentário será removido imediatamente da atividade.',
+      confirmText: 'Excluir comentário',
+      tone: 'danger',
+      action: () => this.api.deleteComment(card.id, commentId).subscribe({
+        next: () => this.openCard(card)
+      })
+    });
+  }
+
   onFileChange(evt: Event) {
     const card = this.selectedCard();
     if (!card) return;
@@ -364,6 +426,21 @@ export class HomeComponent implements OnDestroy {
         input.value = '';
         this.openCard(card);
       }
+    });
+  }
+
+  deleteAttachment(attachmentId: number) {
+    const card = this.selectedCard();
+    if (!card) return;
+    this.openConfirmDialog({
+      title: 'Excluir anexo',
+      message: 'Deseja excluir este anexo?',
+      description: 'O arquivo será removido da atividade e do armazenamento.',
+      confirmText: 'Excluir anexo',
+      tone: 'danger',
+      action: () => this.api.deleteAttachment(card.id, attachmentId).subscribe({
+        next: () => this.openCard(card)
+      })
     });
   }
 

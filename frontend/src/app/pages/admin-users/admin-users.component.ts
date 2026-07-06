@@ -1,15 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
 import { User, UserRole } from '../../models';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ConfirmDialogComponent],
   templateUrl: './admin-users.component.html',
   styleUrl: './admin-users.component.css'
 })
@@ -34,8 +35,20 @@ export class AdminUsersComponent {
 
   // Delete confirm
   deletingUser = signal<User | null>(null);
+  confirmDialog = signal<{
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  } | null>(null);
 
-  constructor(private api: ApiService, public auth: AuthService) {
+  constructor(private api: ApiService, public auth: AuthService, private router: Router) {
+	if (!this.auth.isAdmin()) {
+		this.router.navigateByUrl('/');
+		return;
+	}
     this.loadUsers();
   }
 
@@ -77,7 +90,12 @@ export class AdminUsersComponent {
     if (!user) return;
     this.editError.set('');
 
-    const payload: any = { name: this.editName, email: this.editEmail, role: this.editRole };
+    const payload: any = { name: this.editName, email: this.editEmail };
+
+    if (!this.isSelf(user) && this.auth.isAdmin()) {
+      payload.role = this.editRole;
+    }
+
     if (this.editPassword.trim()) payload.password = this.editPassword;
 
     this.api.updateUser(user.id, payload).subscribe({
@@ -103,6 +121,28 @@ export class AdminUsersComponent {
     this.deletingUser.set(null);
   }
 
+  openConfirmDialog(config: {
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  }) {
+    this.confirmDialog.set(config);
+  }
+
+  closeConfirmDialog() {
+    this.confirmDialog.set(null);
+  }
+
+  confirmCurrentAction() {
+    const dialog = this.confirmDialog();
+    if (!dialog) return;
+    this.closeConfirmDialog();
+    dialog.action();
+  }
+
   confirmDelete() {
     const user = this.deletingUser();
     if (!user) return;
@@ -121,16 +161,24 @@ export class AdminUsersComponent {
       this.error.set('Use a opção "Alterar senha" para sua própria conta.');
       return;
     }
-    const confirmed = confirm(`Resetar senha de ${user.name} para o email (${user.email})?`);
-    if (!confirmed) return;
-
-    this.api.resetUserPasswordToEmail(user.id).subscribe({
-      next: () => this.success.set(`Senha de ${user.name} resetada para o email do usuário.`),
-      error: (err) => this.error.set(err?.error?.message || 'Falha ao resetar senha')
+    this.openConfirmDialog({
+      title: 'Resetar senha',
+      message: `Deseja resetar a senha de ${user.name}?`,
+      description: `A nova senha passará a ser o email ${user.email}.`,
+      confirmText: 'Resetar senha',
+      tone: 'primary',
+      action: () => this.api.resetUserPasswordToEmail(user.id).subscribe({
+        next: () => this.success.set(`Senha de ${user.name} resetada para o email do usuário.`),
+        error: (err) => this.error.set(err?.error?.message || 'Falha ao resetar senha')
+      })
     });
   }
 
   isSelf(user: User): boolean {
     return this.auth.user()?.id === user.id;
+  }
+
+  canEditRole(user: User | null): boolean {
+    return !!user && this.auth.isAdmin() && !this.isSelf(user);
   }
 }

@@ -35,6 +35,14 @@ type changeMyPasswordRequest struct {
 }
 
 func (h *UserHandler) List(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	if claims.Role != string(models.RoleAdmin) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "admin only"})
+	}
+
 	var users []models.User
 	if err := h.DB.Order("name asc").Find(&users).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load users"})
@@ -93,6 +101,21 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
 	}
 
+	isSelf := claims.UserID == user.ID
+	isAdmin := claims.Role == string(models.RoleAdmin)
+
+	if !isAdmin && !isSelf {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden"})
+	}
+
+	if isSelf && req.Role != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "you cannot change your own role"})
+	}
+
+	if !isAdmin && req.Name != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "non-admin users can only change email and password"})
+	}
+
 	if req.Name != nil {
 		if strings.TrimSpace(*req.Name) == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "name cannot be empty"})
@@ -106,6 +129,9 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 		user.Email = *req.Email
 	}
 	if req.Role != nil {
+		if !isAdmin {
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "only admins can change roles"})
+		}
 		if *req.Role != models.RoleAdmin && *req.Role != models.RoleMember {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid role"})
 		}

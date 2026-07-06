@@ -250,7 +250,11 @@
             <h3>Comentários</h3>
             <div class="comments-list">
               <div *ngFor="let comment of selectedCard()?.comments" class="comment">
-                <strong>{{ comment.author }}:</strong> {{ comment.content }}
+                <div class="comment-header">
+                  <strong>{{ comment.author?.name || 'Usuário' }}:</strong>
+                  <button *ngIf="canDeleteComment(comment)" type="button" class="btn btn-danger btn-xs" (click)="deleteComment(comment.id)">Excluir</button>
+                </div>
+                <div>{{ comment.content }}</div>
                 <small>{{ comment.createdAt | date : 'short' }}</small>
               </div>
             </div>
@@ -265,9 +269,12 @@
           <div class="details-section">
             <h3>Anexos</h3>
             <div class="attachments-list">
-              <a *ngFor="let att of selectedCard()?.attachments" [href]="att.url" target="_blank" class="attachment">
-                📎 {{ att.originalName }}
-              </a>
+              <div *ngFor="let att of selectedCard()?.attachments" class="attachment-item">
+                <a [href]="api.getAttachmentUrl(att.url)" target="_blank" rel="noopener noreferrer" class="attachment" download>
+                  📎 {{ att.originalName }}
+                </a>
+                <button *ngIf="canDeleteAttachment(att)" type="button" class="btn btn-danger btn-xs" (click)="deleteAttachment(att.id)">Excluir</button>
+              </div>
             </div>
             <div class="attachment-form">
               <input type="file" #fileInput class="file-input" (change)="onFileChange($event)" />
@@ -308,4 +315,15 @@
       </div>
     </div>
   </div>
+
+  <app-confirm-dialog
+    [visible]="!!confirmDialog()"
+    [title]="confirmDialog()?.title || ''"
+    [message]="confirmDialog()?.message || ''"
+    [description]="confirmDialog()?.description || ''"
+    [confirmText]="confirmDialog()?.confirmText || 'Confirmar'"
+    [tone]="confirmDialog()?.tone || 'primary'"
+    (confirmed)="confirmCurrentAction()"
+    (cancelled)="closeConfirmDialog()"
+  />
 </div>

@@ -5,6 +5,7 @@ import { Card, Comment, DashboardSummary, LoginResponse, User, Project, ProjectM
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly baseUrl = (window as any).__env?.apiUrl || 'http://localhost:8080/api';
+  private readonly apiRoot = this.baseUrl.replace(/\/api\/?$/, '');
 
   constructor(private http: HttpClient) {}
 
@@ -101,10 +102,26 @@ export class ApiService {
     return this.http.post<Comment>(`${this.baseUrl}/cards/${cardId}/comments`, { content });
   }
 
+  deleteComment(cardId: number, commentId: number) {
+    return this.http.delete(`${this.baseUrl}/cards/${cardId}/comments/${commentId}`);
+  }
+
   uploadAttachment(cardId: number, file: File) {
     const form = new FormData();
     form.append('file', file);
     return this.http.post(`${this.baseUrl}/cards/${cardId}/attachments`, form);
+  }
+
+  deleteAttachment(cardId: number, attachmentId: number) {
+    return this.http.delete(`${this.baseUrl}/cards/${cardId}/attachments/${attachmentId}`);
+  }
+
+  getAttachmentUrl(url: string) {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `${this.apiRoot}${url.startsWith('/') ? '' : '/'}${url}`;
   }
 
   deleteCard(id: number) {

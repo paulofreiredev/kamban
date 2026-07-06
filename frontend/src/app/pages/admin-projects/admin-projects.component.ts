@@ -6,11 +6,12 @@ import { ApiService } from '../../core/api.service';
 import { Project, User } from '../../models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog.component';
 
 @Component({
   selector: 'app-admin-projects',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, ConfirmDialogComponent],
   templateUrl: './admin-projects.component.html',
   styleUrls: ['./admin-projects.component.css']
 })
@@ -24,8 +25,16 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   showEditProjectForm = false;
   showMembersModal = false;
   selectedProject: Project | null = null;
-    showDeleteConfirmModal = false;
-    projectToDelete: Project | null = null;
+  showDeleteConfirmModal = false;
+  projectToDelete: Project | null = null;
+  confirmDialog: {
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  } | null = null;
   
   newProjectForm: FormGroup;
   editProjectForm: FormGroup;
@@ -157,21 +166,29 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   }
 
   deactivateProject(projectId: number): void {
-    if (!confirm('Tem certeza que deseja inativar este projeto?')) return;
-    
-    this.api.deactivateProject(projectId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.successMessage = 'Projeto inativado com sucesso';
-          this.loadProjects();
-          setTimeout(() => this.successMessage = null, 3000);
-        },
-        error: (err) => {
-          this.error = 'Erro ao inativar projeto';
-          console.error(err);
-        }
-      });
+    const project = this.projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    this.openConfirmDialog({
+      title: 'Inativar projeto',
+      message: `Deseja inativar o projeto "${project.title}"?`,
+      description: 'Usuários comuns deixarão de ver este projeto na seleção.',
+      confirmText: 'Inativar projeto',
+      tone: 'primary',
+      action: () => this.api.deactivateProject(projectId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.successMessage = 'Projeto inativado com sucesso';
+            this.loadProjects();
+            setTimeout(() => this.successMessage = null, 3000);
+          },
+          error: (err) => {
+            this.error = 'Erro ao inativar projeto';
+            console.error(err);
+          }
+        })
+    });
   }
 
   deleteProject(projectId: number): void {
@@ -206,6 +223,28 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
     this.projectToDelete = null;
   }
 
+  openConfirmDialog(config: {
+    title: string;
+    message: string;
+    description?: string;
+    confirmText: string;
+    tone: 'primary' | 'danger';
+    action: () => void;
+  }): void {
+    this.confirmDialog = config;
+  }
+
+  closeConfirmDialog(): void {
+    this.confirmDialog = null;
+  }
+
+  confirmCurrentAction(): void {
+    const dialog = this.confirmDialog;
+    if (!dialog) return;
+    this.closeConfirmDialog();
+    dialog.action();
+  }
+
   openMembersModal(project: Project): void {
     this.selectedProject = project;
     this.addMemberForm.reset();
@@ -238,26 +277,33 @@ export class AdminProjectsComponent implements OnInit, OnDestroy {
   }
 
   removeMember(memberId: number): void {
-    if (!confirm('Tem certeza que deseja remover este membro?')) return;
     if (!this.selectedProject) return;
-    
-    this.api.removeProjectMember(this.selectedProject.id, memberId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.successMessage = 'Membro removido com sucesso';
-          this.loadProjects();
-          if (this.selectedProject) {
-            const updated = this.projects.find(p => p.id === this.selectedProject!.id);
-            if (updated) this.selectedProject = updated;
+
+    const member = this.selectedProject.members?.find(item => item.id === memberId);
+    this.openConfirmDialog({
+      title: 'Remover membro',
+      message: `Deseja remover ${member?.userName || 'este membro'} do projeto?`,
+      description: 'O usuário perderá acesso imediato às atividades deste projeto.',
+      confirmText: 'Remover membro',
+      tone: 'danger',
+      action: () => this.api.removeProjectMember(this.selectedProject!.id, memberId)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.successMessage = 'Membro removido com sucesso';
+            this.loadProjects();
+            if (this.selectedProject) {
+              const updated = this.projects.find(p => p.id === this.selectedProject!.id);
+              if (updated) this.selectedProject = updated;
+            }
+            setTimeout(() => this.successMessage = null, 3000);
+          },
+          error: (err) => {
+            this.error = 'Erro ao remover membro';
+            console.error(err);
           }
-          setTimeout(() => this.successMessage = null, 3000);
-        },
-        error: (err) => {
-          this.error = 'Erro ao remover membro';
-          console.error(err);
-        }
-      });
+        })
+    });
   }
 
   getUnassignedUsers(): User[] {

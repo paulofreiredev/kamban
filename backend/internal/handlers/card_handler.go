@@ -10,6 +10,7 @@ import (
 	"kamban/backend/internal/middleware"
 	"kamban/backend/internal/models"
 	"kamban/backend/internal/storage"
+	"kamban/backend/internal/services"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -43,6 +44,10 @@ type updateCardRequest struct {
 
 type createCommentRequest struct {
 	Content string `json:"content"`
+}
+
+func canManageCardItem(claims *services.Claims, ownerID uint) bool {
+	return claims != nil && (claims.Role == "admin" || claims.UserID == ownerID)
 }
 
 func isValidStatus(s models.CardStatus) bool {
@@ -275,6 +280,33 @@ func (h *CardHandler) AddComment(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(comment)
 }
 
+func (h *CardHandler) DeleteComment(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	commentID, err := strconv.ParseUint(c.Params("commentId"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid comment id"})
+	}
+
+	var comment models.Comment
+	if err := h.DB.First(&comment, uint(commentID)).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "comment not found"})
+	}
+
+	if !canManageCardItem(claims, comment.CreatedBy) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden"})
+	}
+
+	if err := h.DB.Delete(&comment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete comment"})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 func isSupportedMime(m string) bool {
 	return strings.HasPrefix(m, "image/") || strings.HasPrefix(m, "video/")
 }
@@ -324,6 +356,37 @@ func (h *CardHandler) AddAttachment(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load attachment"})
 	}
 	return c.Status(fiber.StatusCreated).JSON(attachment)
+}
+
+func (h *CardHandler) DeleteAttachment(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	attachmentID, err := strconv.ParseUint(c.Params("attachmentId"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid attachment id"})
+	}
+
+	var attachment models.Attachment
+	if err := h.DB.First(&attachment, uint(attachmentID)).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "attachment not found"})
+	}
+
+	if !canManageCardItem(claims, attachment.UploadedBy) {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "forbidden"})
+	}
+
+	if err := h.Storage.Delete(attachment.StoragePath); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete file"})
+	}
+
+	if err := h.DB.Delete(&attachment).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete attachment"})
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func (h *CardHandler) Delete(c *fiber.Ctx) error {
