@@ -61,7 +61,10 @@
           cdkDrag
         >
           <div class="card-header">
-            <span class="card-title">{{ card.title }}</span>
+            <span class="card-title">
+              {{ card.title }}
+              <span *ngIf="card.isSubtask" class="subtask-indicator" title="Subtarefa">📌</span>
+            </span>
             <span class="card-id">#{{ card.id }}</span>
           </div>
           <p class="card-description">{{ card.description | slice : 0 : 100 }}</p>
@@ -70,6 +73,9 @@
             <span class="card-age">{{ getTimeInCurrentColumn(card) }}</span>
             <span *ngIf="card.assigneeId" class="card-assignee">
               {{ getAssigneeName(card) }}
+            </span>
+            <span *ngIf="getSubtaskProgress(card).total > 0" class="card-subtask-count">
+              {{ getSubtaskProgress(card).done }}/{{ getSubtaskProgress(card).total }} ✓
             </span>
           </div>
         </div>
@@ -192,6 +198,45 @@
             <p *ngIf="selectedCard()?.justification">
               <strong>Justificativa:</strong> {{ selectedCard()?.justification }}
             </p>
+          </div>
+
+          <!-- Subtasks Section -->
+          <div class="details-section" *ngIf="selectedCard() && !selectedCard()?.isSubtask">
+            <h3>
+              Subtarefas
+              <span class="subtask-badge" *ngIf="getSubtaskProgress(selectedCard()).total > 0">
+                {{ getSubtaskProgress(selectedCard()).done }}/{{ getSubtaskProgress(selectedCard()).total }}
+              </span>
+            </h3>
+            <div class="subtasks-list">
+              <div *ngFor="let subtask of selectedCard()?.subtasks || []" class="subtask-item">
+                <input 
+                  type="checkbox" 
+                  [checked]="subtask.status === 'done'" 
+                  (change)="updateSubtaskStatus(subtask.id, $event)"
+                  [disabled]="creatingSubtask()"
+                />
+                <span [class.subtask-done]="subtask.status === 'done'">{{ subtask.title }}</span>
+              </div>
+            </div>
+
+            <div class="subtask-form">
+              <input 
+                type="text" 
+                [(ngModel)]="newSubtaskTitle" 
+                placeholder="Nova subtarefa..." 
+                class="form-input"
+                [disabled]="creatingSubtask()"
+              />
+              <button 
+                type="button" 
+                class="btn btn-primary btn-sm" 
+                (click)="createSubtask()"
+                [disabled]="!newSubtaskTitle().trim() || creatingSubtask()"
+              >
+                {{ creatingSubtask() ? 'Criando...' : '+ Subtarefa' }}
+              </button>
+            </div>
           </div>
 
           <!-- Comments Section -->

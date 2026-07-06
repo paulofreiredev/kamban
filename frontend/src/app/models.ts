@@ -45,6 +45,9 @@ export interface Card {
   createdBy?: User;
   createdAt: string;
   updatedAt: string;
+  parentId?: number | null;
+  isSubtask: boolean;
+  subtasks?: Card[];
   comments?: Comment[];
   attachments?: Attachment[];
 }

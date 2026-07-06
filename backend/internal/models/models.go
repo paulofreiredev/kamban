@@ -46,8 +46,11 @@ type Card struct {
 	CreatedBy       *User        `json:"createdBy,omitempty"`
 	CreatedAt       time.Time    `json:"createdAt"`
 	UpdatedAt       time.Time    `json:"updatedAt"`
+	ParentID        *uint        `gorm:"index" json:"parentId"`
+	IsSubtask       bool         `gorm:"not null;default:false" json:"isSubtask"`
 	Comments        []Comment    `json:"comments,omitempty"`
 	Attachments     []Attachment `json:"attachments,omitempty"`
+	Subtasks        []Card       `gorm:"foreignKey:ParentID" json:"subtasks,omitempty"`
 }
 
 type Comment struct {

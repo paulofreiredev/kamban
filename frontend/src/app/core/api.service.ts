@@ -78,6 +78,14 @@ export class ApiService {
     return this.http.delete(`${this.baseUrl}/cards/${id}`);
   }
 
+  createSubtask(parentId: number, payload: { title: string; description?: string }) {
+    return this.http.post<Card>(`${this.baseUrl}/cards/${parentId}/subtasks`, payload);
+  }
+
+  getSubtasks(cardId: number) {
+    return this.http.get<Card[]>(`${this.baseUrl}/cards/${cardId}/subtasks`);
+  }
+
   getDashboardSummary(from: string, to: string) {
     const params = new HttpParams().set('from', from).set('to', to);
     return this.http.get<DashboardSummary>(`${this.baseUrl}/dashboard/summary`, { params });

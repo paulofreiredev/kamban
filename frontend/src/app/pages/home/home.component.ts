@@ -46,6 +46,8 @@ export class HomeComponent implements OnDestroy {
   loading = signal(false);
   passwordError = signal('');
   passwordSuccess = signal('');
+  newSubtaskTitle = signal('');
+  creatingSubtask = signal(false);
 
   fromDate = this.toDateInput(this.daysAgo(30));
   toDate = this.toDateInput(new Date());
@@ -385,5 +387,59 @@ export class HomeComponent implements OnDestroy {
 
     const days = Math.floor(hours / 24);
     return `${days}d`;
+  }
+
+  createSubtask(): void {
+    const title = this.newSubtaskTitle().trim();
+    if (!title || !this.selectedCard()) {
+      return;
+    }
+
+    this.creatingSubtask.set(true);
+    this.api.createSubtask(this.selectedCard()!.id, { title })
+      .subscribe({
+        next: (subtask: Card) => {
+          const selected = this.selectedCard();
+          if (selected) {
+            if (!selected.subtasks) {
+              selected.subtasks = [];
+            }
+            selected.subtasks.push(subtask);
+            this.selectedCard.set({ ...selected });
+          }
+          this.newSubtaskTitle.set('');
+          this.creatingSubtask.set(false);
+        },
+        error: () => {
+          this.creatingSubtask.set(false);
+        }
+      });
+  }
+
+  updateSubtaskStatus(subtaskId: number, event: any): void {
+    const isChecked = event.target.checked;
+    const newStatus: CardStatus = isChecked ? 'done' : 'backlog';
+    
+    this.api.updateCard(subtaskId, { status: newStatus })
+      .subscribe({
+        next: (updated: Card) => {
+          const selected = this.selectedCard();
+          if (selected && selected.subtasks) {
+            const idx = selected.subtasks.findIndex(s => s.id === subtaskId);
+            if (idx >= 0) {
+              selected.subtasks[idx] = updated;
+              this.selectedCard.set({ ...selected });
+            }
+          }
+        }
+      });
+  }
+
+  getSubtaskProgress(card: Card | null): { done: number; total: number } {
+    if (!card || !card.subtasks || card.subtasks.length === 0) {
+      return { done: 0, total: 0 };
+    }
+    const done = card.subtasks.filter(st => st.status === 'done').length;
+    return { done, total: card.subtasks.length };
   }
 }

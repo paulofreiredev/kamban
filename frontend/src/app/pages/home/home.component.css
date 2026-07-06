@@ -224,6 +224,20 @@ select:focus {
   font-weight: 600;
 }
 
+.subtask-indicator {
+  font-size: 12px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.card-subtask-count {
+  background: #f0f4ff;
+  color: #2456ff;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
 /* Buttons */
 .btn {
   cursor: pointer;
@@ -324,6 +338,10 @@ select:focus {
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.3s ease;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 @keyframes slideUp {
@@ -567,3 +585,52 @@ select:focus {
   display: none;
 }
 
+/* Subtasks */
+.subtask-badge {
+  font-size: 12px;
+  background: #f0f4ff;
+  color: #2456ff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
+
+.subtasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.subtask-item input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #2456ff;
+}
+
+.subtask-item span {
+  flex: 1;
+  word-break: break-word;
+}
+
+.subtask-done {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.subtask-form {
+  display: flex;
+  gap: 8px;
+}
+
+.subtask-form input {
+  flex: 1;
+}

@@ -129,7 +129,7 @@ func (h *DashboardHandler) Summary(c *fiber.Ctx) error {
 		Select(`
 			u.id as user_id,
 			u.name as user_name,
-			COALESCE(SUM(CASE WHEN c.status = 'in_progress' THEN 1 ELSE 0 END), 0) as in_progress_count,
+			COALESCE(SUM(CASE WHEN c.status IN ('in_progress', 'in_review') THEN 1 ELSE 0 END), 0) as in_progress_count,
 			COALESCE(SUM(CASE WHEN c.status = 'done' THEN 1 ELSE 0 END), 0) as done_count
 		`).
 		Joins("LEFT JOIN cards c ON c.assignee_id = u.id AND c.created_at >= ? AND c.created_at < ?", fromDate, endExclusive).

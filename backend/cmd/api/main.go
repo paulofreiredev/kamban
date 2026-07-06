@@ -70,6 +70,8 @@ func main() {
 	protected.Post("/cards/:id/comments", cardHandler.AddComment)
 	protected.Post("/cards/:id/attachments", cardHandler.AddAttachment)
 	protected.Delete("/cards/:id", middleware.AdminOnly(), cardHandler.Delete)
+	protected.Post("/cards/:parentId/subtasks", cardHandler.CreateSubtask)
+	protected.Get("/cards/:id/subtasks", cardHandler.GetSubtasks)
 
 	log.Printf("backend running on :%s", cfg.Port)
 	log.Fatal(app.Listen(fmt.Sprintf(":%s", cfg.Port)))

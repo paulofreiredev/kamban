@@ -3,6 +3,7 @@ package handlers
 import (
 	"mime"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,6 +25,11 @@ type createCardRequest struct {
 	Description string            `json:"description"`
 	Status      models.CardStatus `json:"status"`
 	AssigneeID  *uint             `json:"assigneeId"`
+}
+
+type createSubtaskRequest struct {
+	Title      string `json:"title"`
+	Description string `json:"description"`
 }
 
 type updateCardRequest struct {
@@ -318,4 +324,64 @@ func (h *CardHandler) Delete(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete card"})
 	}
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *CardHandler) CreateSubtask(c *fiber.Ctx) error {
+	claims := middleware.CurrentClaims(c)
+	if claims == nil {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+
+	parentID, err := strconv.ParseUint(c.Params("parentId"), 10, 32)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid parent id"})
+	}
+
+	// Verify parent exists and is not itself a subtask
+	var parent models.Card
+	if err := h.DB.First(&parent, uint(parentID)).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "parent card not found"})
+	}
+	if parent.IsSubtask {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cannot create subtask of subtask"})
+	}
+
+	// Parse request
+	var req createSubtaskRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
+	}
+	if strings.TrimSpace(req.Title) == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "title is required"})
+	}
+
+	// Create subtask
+	createdByID := claims.UserID
+	now := time.Now()
+	parentIDUint := uint(parentID)
+
+	subtask := models.Card{
+		Title:           req.Title,
+		Description:     req.Description,
+		Status:          models.StatusBacklog,
+		StatusChangedAt: &now,
+		ParentID:        &parentIDUint,
+		IsSubtask:       true,
+		CreatedByID:     &createdByID,
+	}
+
+	if err := h.DB.Create(&subtask).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not create subtask"})
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(subtask)
+}
+
+func (h *CardHandler) GetSubtasks(c *fiber.Ctx) error {
+	cardID := c.Params("id")
+	var subtasks []models.Card
+	if err := h.DB.Where("parent_id = ?", cardID).Order("created_at asc").Find(&subtasks).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load subtasks"})
+	}
+	return c.JSON(subtasks)
 }
