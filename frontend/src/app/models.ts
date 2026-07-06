@@ -8,6 +8,27 @@ export interface User {
   active: boolean;
 }
 
+export interface ProjectMember {
+  id: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  createdAt: string;
+}
+
+export interface Project {
+  id: number;
+  title: string;
+  description: string;
+  ownerId: number;
+  ownerName: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  members?: ProjectMember[];
+  cardCount: number;
+}
+
 export type CardStatus = 'backlog' | 'todo' | 'in_progress' | 'in_review' | 'done' | 'cancelled';
 
 export interface Attachment {
@@ -32,6 +53,7 @@ export interface Comment {
 
 export interface Card {
   id: number;
+  projectId: number;
   title: string;
   description: string;
   status: CardStatus;

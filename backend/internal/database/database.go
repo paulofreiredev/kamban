@@ -17,7 +17,7 @@ func Connect(cfg config.Config) (*gorm.DB, error) {
 }
 
 func MigrateAndSeed(db *gorm.DB) error {
-	if err := db.AutoMigrate(&models.User{}, &models.Card{}, &models.Comment{}, &models.Attachment{}); err != nil {
+	if err := db.AutoMigrate(&models.User{}, &models.Project{}, &models.ProjectMember{}, &models.Card{}, &models.Comment{}, &models.Attachment{}); err != nil {
 		return err
 	}
 
@@ -47,5 +47,15 @@ func MigrateAndSeed(db *gorm.DB) error {
 	if err := db.Exec(string(seedSQL)).Error; err != nil {
 		return err
 	}
+
+	// Seed default project and migrate existing cards
+	seedProjectSQL, err := seedScripts.ReadFile("scripts/002_seed_default_project.sql")
+	if err != nil {
+		return err
+	}
+	if err := db.Exec(string(seedProjectSQL)).Error; err != nil {
+		return err
+	}
+
 	return nil
 }

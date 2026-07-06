@@ -21,6 +21,7 @@ type CardHandler struct {
 }
 
 type createCardRequest struct {
+	ProjectID   uint              `json:"projectId"`
 	Title       string            `json:"title"`
 	Description string            `json:"description"`
 	Status      models.CardStatus `json:"status"`
@@ -57,6 +58,13 @@ func (h *CardHandler) List(c *fiber.Ctx) error {
 	fromStr := c.Query("from")
 	toStr := c.Query("to")
 	assigneeIdStr := c.Query("assigneeId")
+	projectIDStr := c.Query("projectId")
+	
+	// projectId is required
+	if projectIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "projectId is required"})
+	}
+
 	to := time.Now()
 	from := to.AddDate(0, 0, -30)
 	var err error
@@ -80,6 +88,7 @@ func (h *CardHandler) List(c *fiber.Ctx) error {
 	query := h.DB.
 		Preload("Assignee").
 		Preload("CreatedBy").
+		Where("project_id = ?", projectIDStr).
 		Where("created_at BETWEEN ? AND ?", from, to)
 	
 	if assigneeIdStr != "" && assigneeIdStr != "0" {
@@ -119,6 +128,20 @@ func (h *CardHandler) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
 	}
+	
+	// Validate projectId
+	if req.ProjectID == 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "projectId is required"})
+	}
+	
+	// Verify user has access to project
+	var projectMember models.ProjectMember
+	if err := h.DB.
+		Where("project_id = ? AND user_id = ?", req.ProjectID, claims.UserID).
+		First(&projectMember).Error; err != nil {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "you don't have access to this project"})
+	}
+	
 	if strings.TrimSpace(req.Title) == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "title is required"})
 	}
@@ -151,6 +174,7 @@ func (h *CardHandler) Create(c *fiber.Ctx) error {
 	now := time.Now()
 	creatorID := claims.UserID
 	card := models.Card{
+		ProjectID:       req.ProjectID,
 		Title:           req.Title,
 		Description:     req.Description,
 		Status:          req.Status,

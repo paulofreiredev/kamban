@@ -30,6 +30,12 @@
   margin-bottom: 16px;
 }
 
+.project-selector {
+  display: flex;
+  align-items: center;
+  margin: 0 16px;
+}
+
 .header-actions {
   display: flex;
   gap: 8px;

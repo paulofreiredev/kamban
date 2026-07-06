@@ -1,0 +1,38 @@
+<div class="select-container">
+  <header class="header">
+    <h1>Selecione um Projeto</h1>
+    <button class="btn-logout" (click)="logout()">Sair</button>
+  </header>
+
+  <main class="content">
+    <div *ngIf="loading" class="loading">
+      <p>Carregando projetos...</p>
+    </div>
+
+    <div *ngIf="error && !loading" class="error">
+      <p>{{ error }}</p>
+      <button class="btn-retry" (click)="loadProjects()">Tentar novamente</button>
+    </div>
+
+    <div *ngIf="projects.length === 0 && !loading && !error" class="no-projects">
+      <p>Você não participa de nenhum projeto.</p>
+      <p>Contate o administrador para ser adicionado a um projeto.</p>
+    </div>
+
+    <div *ngIf="projects.length > 0 && !loading" class="projects-grid">
+      <div 
+        *ngFor="let project of projects" 
+        class="project-card"
+        (click)="selectProject(project)"
+      >
+        <h3>{{ project.title }}</h3>
+        <p class="description">{{ project.description }}</p>
+        <div class="meta">
+          <span class="owner">{{ project.ownerName }}</span>
+          <span class="member-count">{{ project.members?.length || 0 }} membros</span>
+          <span class="card-count">{{ project.cardCount }} tarefas</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

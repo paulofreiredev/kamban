@@ -6,7 +6,7 @@ Mudança para remover credenciais padrão do backend via variáveis (`ADMIN_NAME
 ## Resultado da validação (Agente de Segurança)
 Aprovado com ressalvas operacionais.
 
-## Boas práticas aplicadas
+## Boas práticas aplicadas7
 1. **Remoção de segredo em runtime do backend**
    - Backend não depende mais de variáveis de admin para criar conta padrão.
 2. **Seed idempotente**

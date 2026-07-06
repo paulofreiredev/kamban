@@ -1,0 +1,127 @@
+<div class="projects-container">
+  <div class="header">
+    <h1>Gerenciar Projetos</h1>
+    <a routerLink="/admin/users" class="btn btn-secondary">Gerenciar Usuários</a>
+    <a routerLink="/" class="btn btn-secondary">Voltar</a>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Projetos</h2>
+      <button class="btn btn-primary" (click)="openNewProjectForm()">+ Novo Projeto</button>
+    </div>
+
+    <div *ngIf="loading" class="loading">Carregando...</div>
+
+    <div *ngIf="!loading && projects.length === 0" class="no-data">
+      Nenhum projeto encontrado
+    </div>
+
+    <div *ngIf="!loading && projects.length > 0" class="projects-list">
+      <div *ngFor="let project of projects" class="project-item">
+        <div class="project-info">
+          <h3>{{ project.title }}</h3>
+          <p class="description">{{ project.description }}</p>
+          <div class="meta">
+            <span>Proprietário: {{ project.ownerName }}</span>
+            <span>{{ project.members?.length || 0 }} membros</span>
+            <span>{{ project.cardCount }} tarefas</span>
+            <span [class.inactive]="!project.isActive">{{ project.isActive ? 'Ativo' : 'Inativo' }}</span>
+          </div>
+        </div>
+        <div class="project-actions">
+          <button class="btn btn-info" (click)="openEditProjectForm(project)">Editar</button>
+          <button class="btn btn-info" (click)="openMembersModal(project)">Membros</button>
+          <button class="btn btn-warning" (click)="deactivateProject(project.id)" *ngIf="project.isActive">Inativar</button>
+          <button class="btn btn-danger" (click)="deleteProject(project.id)">Deletar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Project Modal -->
+  <div *ngIf="showNewProjectForm" class="modal-overlay" (click)="closeNewProjectForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Criar Novo Projeto</h2>
+      <form [formGroup]="newProjectForm" (ngSubmit)="submitNewProject()">
+        <div class="form-group">
+          <label>Título:</label>
+          <input type="text" formControlName="title" required />
+        </div>
+        <div class="form-group">
+          <label>Descrição:</label>
+          <textarea formControlName="description"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Adicionar Membros:</label>
+          <select formControlName="memberIds" multiple class="multi-select">
+            <option *ngFor="let user of users" [value]="user.id">{{ user.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!newProjectForm.valid">Criar</button>
+          <button type="button" class="btn btn-secondary" (click)="closeNewProjectForm()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div *ngIf="showEditProjectForm" class="modal-overlay" (click)="closeEditProjectForm()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Editar Projeto</h2>
+      <form [formGroup]="editProjectForm" (ngSubmit)="submitEditProject()">
+        <div class="form-group">
+          <label>Título:</label>
+          <input type="text" formControlName="title" required />
+        </div>
+        <div class="form-group">
+          <label>Descrição:</label>
+          <textarea formControlName="description"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" [disabled]="!editProjectForm.valid">Salvar</button>
+          <button type="button" class="btn btn-secondary" (click)="closeEditProjectForm()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Members Modal -->
+  <div *ngIf="showMembersModal" class="modal-overlay" (click)="closeMembersModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h2>Gerenciar Membros - {{ selectedProject?.title }}</h2>
+      
+      <div class="members-section">
+        <h3>Membros Atuais</h3>
+        <div *ngIf="(selectedProject?.members?.length ?? 0) > 0" class="members-list">
+          <div *ngFor="let member of (selectedProject?.members || [])" class="member-item">
+            <span>{{ member.userName }} ({{ member.userEmail }})</span>
+            <button class="btn btn-danger btn-sm" (click)="removeMember(member.id)">Remover</button>
+          </div>
+        </div>
+        <p *ngIf="(selectedProject?.members?.length ?? 0) === 0">Nenhum membro</p>
+      </div>
+
+      <div class="add-member-section">
+        <h3>Adicionar Membro</h3>
+        <form [formGroup]="addMemberForm" (ngSubmit)="addMember()">
+          <div class="form-group">
+            <select formControlName="userId" required>
+              <option value="">Selecione um usuário</option>
+              <option *ngFor="let user of getUnassignedUsers()" [value]="user.id">{{ user.name }}</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="!addMemberForm.valid">Adicionar</button>
+        </form>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="closeMembersModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>

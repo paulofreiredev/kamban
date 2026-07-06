@@ -3,8 +3,14 @@
   <div class="header">
     <div class="header-title">
       <h1>Kanban Board</h1>
+      <div class="project-selector">
+        <button class="btn btn-info" type="button" (click)="switchProject()">
+          Trocar Projeto
+        </button>
+      </div>
       <div class="header-actions">
         <a *ngIf="auth.isAdmin()" routerLink="/admin/dashboard" class="btn btn-secondary">Dashboard</a>
+        <a *ngIf="auth.isAdmin()" routerLink="/admin/projects" class="btn btn-secondary">Gerenciar projetos</a>
         <a *ngIf="auth.isAdmin()" routerLink="/admin/users" class="btn btn-secondary">Gerenciar usuários</a>
         <button class="btn btn-secondary" type="button" (click)="openPasswordModal()">Alterar senha</button>
         <button class="btn btn-secondary" type="button" (click)="auth.logout()">Sair</button>

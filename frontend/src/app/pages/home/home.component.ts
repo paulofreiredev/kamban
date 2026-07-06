@@ -1,7 +1,7 @@
 import { Component, OnDestroy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { ApiService } from '../../core/api.service';
 import { AuthService } from '../../core/auth.service';
@@ -77,7 +77,8 @@ export class HomeComponent implements OnDestroy {
   constructor(
     public auth: AuthService,
     private api: ApiService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private router: Router
   ) {
     this.newCardForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(1)]],
@@ -120,11 +121,17 @@ export class HomeComponent implements OnDestroy {
 
   reloadCards() {
     this.loading.set(true);
-    const params: any = { from: this.fromDate, to: this.toDate };
+    const projectId = this.auth.selectedProjectId();
+    if (!projectId) {
+      this.loading.set(false);
+      return;
+    }
+    
+    const params: any = { projectId, from: this.fromDate, to: this.toDate };
     if (this.selectedAssigneeId !== '') {
       params.assigneeId = this.selectedAssigneeId;
     }
-    this.api.listCards(params.from, params.to, params.assigneeId).subscribe({
+    this.api.listCards(projectId, params.from, params.to, params.assigneeId).subscribe({
       next: (cards) => {
         this.cards.set(cards);
         this.loading.set(false);
@@ -140,6 +147,11 @@ export class HomeComponent implements OnDestroy {
 
   closeNewCardModal() {
     this.showNewCardModal.set(false);
+  }
+
+  switchProject() {
+    this.auth.selectProject(0);
+    this.router.navigateByUrl('/projects/select');
   }
 
   openPasswordModal() {
@@ -185,7 +197,11 @@ export class HomeComponent implements OnDestroy {
 
   submitNewCard() {
     if (!this.newCardForm.valid) return;
+    const projectId = this.auth.selectedProjectId();
+    if (!projectId) return;
+    
     const payload: any = {
+      projectId,
       title: this.newCardForm.get('title')?.value,
       description: this.newCardForm.get('description')?.value || '',
       status: 'backlog'

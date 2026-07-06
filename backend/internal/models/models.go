@@ -31,8 +31,32 @@ type User struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
+type Project struct {
+	ID          uint           `gorm:"primaryKey" json:"id"`
+	Title       string         `gorm:"size:180;not null" json:"title"`
+	Description string         `gorm:"type:text" json:"description"`
+	OwnerID     uint           `gorm:"not null" json:"ownerId"`
+	Owner       *User          `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	IsActive    bool           `gorm:"not null;default:true" json:"isActive"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   time.Time      `json:"updatedAt"`
+	Members     []ProjectMember `json:"members,omitempty"`
+	Cards       []Card         `gorm:"foreignKey:ProjectID" json:"cards,omitempty"`
+}
+
+type ProjectMember struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	ProjectID uint      `gorm:"index;not null" json:"projectId"`
+	Project   *Project  `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
+	UserID    uint      `gorm:"index;not null" json:"userId"`
+	User      *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
 type Card struct {
 	ID              uint         `gorm:"primaryKey" json:"id"`
+	ProjectID       uint         `gorm:"index" json:"projectId"`
+	Project         *Project     `gorm:"foreignKey:ProjectID" json:"project,omitempty"`
 	Title           string       `gorm:"size:180;not null" json:"title"`
 	Description     string       `gorm:"type:text" json:"description"`
 	Status          CardStatus   `gorm:"size:32;not null;default:backlog" json:"status"`

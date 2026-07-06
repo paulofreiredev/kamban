@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Card, Comment, DashboardSummary, LoginResponse, User } from '../models';
+import { Card, Comment, DashboardSummary, LoginResponse, User, Project, ProjectMember } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -44,15 +44,48 @@ export class ApiService {
     return this.http.post<{ message: string; defaultPassword: string }>(`${this.baseUrl}/users/${id}/reset-password`, {});
   }
 
-  listCards(from: string, to: string, assigneeId?: number | string) {
-    let params = new HttpParams().set('from', from).set('to', to);
+  // Projects
+  listProjects() {
+    return this.http.get<Project[]>(`${this.baseUrl}/projects`);
+  }
+
+  getProject(id: number) {
+    return this.http.get<Project>(`${this.baseUrl}/projects/${id}`);
+  }
+
+  createProject(payload: { title: string; description: string; memberIds?: number[] }) {
+    return this.http.post<Project>(`${this.baseUrl}/projects`, payload);
+  }
+
+  updateProject(id: number, payload: { title: string; description: string }) {
+    return this.http.put<Project>(`${this.baseUrl}/projects/${id}`, payload);
+  }
+
+  deleteProject(id: number) {
+    return this.http.delete(`${this.baseUrl}/projects/${id}`);
+  }
+
+  deactivateProject(id: number) {
+    return this.http.patch<{ success: boolean }>(`${this.baseUrl}/projects/${id}/deactivate`, {});
+  }
+
+  addProjectMember(projectId: number, userId: number) {
+    return this.http.post<ProjectMember>(`${this.baseUrl}/projects/${projectId}/members`, { userId });
+  }
+
+  removeProjectMember(projectId: number, memberId: number) {
+    return this.http.delete(`${this.baseUrl}/projects/${projectId}/members/${memberId}`);
+  }
+
+  listCards(projectId: number, from: string, to: string, assigneeId?: number | string) {
+    let params = new HttpParams().set('projectId', projectId).set('from', from).set('to', to);
     if (assigneeId) {
       params = params.set('assigneeId', assigneeId.toString());
     }
     return this.http.get<Card[]>(`${this.baseUrl}/cards`, { params });
   }
 
-  createCard(payload: { title: string; description: string; assigneeId?: number; status?: string }) {
+  createCard(payload: { projectId: number; title: string; description: string; assigneeId?: number; status?: string }) {
     return this.http.post<Card>(`${this.baseUrl}/cards`, payload);
   }
 

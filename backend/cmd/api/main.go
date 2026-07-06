@@ -44,6 +44,7 @@ func main() {
 	userHandler := &handlers.UserHandler{DB: db}
 	cardHandler := &handlers.CardHandler{DB: db, Storage: storageProvider}
 	dashboardHandler := &handlers.DashboardHandler{DB: db}
+	projectHandler := handlers.NewProjectHandler(db)
 
 	api := app.Group("/api")
 	api.Post("/auth/login", authHandler.Login)
@@ -61,6 +62,16 @@ func main() {
 	protected.Post("/users/:id/reset-password", middleware.AdminOnly(), userHandler.ResetPasswordToEmail)
 	protected.Patch("/users/:id/toggle", middleware.AdminOnly(), userHandler.ToggleActive)
 	protected.Delete("/users/:id", middleware.AdminOnly(), userHandler.Delete)
+
+	// Project routes
+	protected.Get("/projects", projectHandler.GetUserProjects)
+	protected.Post("/projects", middleware.AdminOnly(), projectHandler.CreateProject)
+	protected.Get("/projects/:projectId", projectHandler.GetProject)
+	protected.Put("/projects/:projectId", middleware.AdminOnly(), projectHandler.UpdateProject)
+	protected.Delete("/projects/:projectId", middleware.AdminOnly(), projectHandler.DeleteProject)
+	protected.Patch("/projects/:projectId/deactivate", middleware.AdminOnly(), projectHandler.DeactivateProject)
+	protected.Post("/projects/:projectId/members", middleware.AdminOnly(), projectHandler.AddProjectMember)
+	protected.Delete("/projects/:projectId/members/:memberId", middleware.AdminOnly(), projectHandler.RemoveProjectMember)
 
 	protected.Get("/cards", cardHandler.List)
 	protected.Post("/cards", cardHandler.Create)
