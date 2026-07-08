@@ -59,6 +59,67 @@ func isValidStatus(s models.CardStatus) bool {
 	}
 }
 
+// countSubtasks returns the total count of subtasks for a card
+func (h *CardHandler) countSubtasks(cardID uint) (int64, error) {
+	var count int64
+	if err := h.DB.Model(&models.Card{}).Where("parent_id = ?", cardID).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// countDoneOrCancelledSubtasks returns count of subtasks that are done or cancelled
+func (h *CardHandler) countDoneOrCancelledSubtasks(cardID uint) (int64, error) {
+	var count int64
+	if err := h.DB.Model(&models.Card{}).
+		Where("parent_id = ?", cardID).
+		Where("status IN ?", []models.CardStatus{models.StatusDone, models.StatusCancelled}).
+		Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// canCompleteCard checks if card can be moved to done/cancelled status
+func (h *CardHandler) canCompleteCard(cardID uint) (bool, error) {
+	// If card has no subtasks, it can always be completed
+	total, err := h.countSubtasks(cardID)
+	if err != nil {
+		return false, err
+	}
+	if total == 0 {
+		return true, nil
+	}
+
+	// If card has subtasks, all must be done or cancelled
+	completed, err := h.countDoneOrCancelledSubtasks(cardID)
+	if err != nil {
+		return false, err
+	}
+	return completed == total, nil
+}
+
+// canMoveSubtask checks if subtask can be moved to a new status
+func (h *CardHandler) canMoveSubtask(subtaskID uint) (bool, error) {
+	var subtask models.Card
+	if err := h.DB.First(&subtask, subtaskID).Error; err != nil {
+		return false, err
+	}
+
+	// If this is not a subtask, always allow
+	if !subtask.IsSubtask || subtask.ParentID == nil {
+		return true, nil
+	}
+
+	// Subtask can only be moved if parent is in progress
+	var parent models.Card
+	if err := h.DB.First(&parent, *subtask.ParentID).Error; err != nil {
+		return false, err
+	}
+
+	return parent.Status == models.StatusInProgress, nil
+}
+
 func (h *CardHandler) List(c *fiber.Ctx) error {
 	fromStr := c.Query("from")
 	toStr := c.Query("to")
@@ -225,6 +286,32 @@ func (h *CardHandler) Update(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid status"})
 		}
 		if card.Status != *req.Status {
+			// Check subtask transition rules
+			newStatus := *req.Status
+			
+			// Rule 1: If this is a subtask trying to transition to done/cancelled, parent must be in progress
+			if card.IsSubtask && (newStatus == models.StatusDone || newStatus == models.StatusCancelled) {
+				if card.ParentID != nil {
+					var parent models.Card
+					if err := h.DB.First(&parent, *card.ParentID).Error; err == nil {
+						if parent.Status == models.StatusCancelled || parent.Status == models.StatusDone {
+							return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "subtask can only be completed/cancelled if parent is in progress"})
+						}
+					}
+				}
+			}
+			
+			// Rule 2: If trying to move parent to done/cancelled, all subtasks must be done or cancelled
+			if !card.IsSubtask && (newStatus == models.StatusDone || newStatus == models.StatusCancelled) {
+				canComplete, err := h.canCompleteCard(card.ID)
+				if err != nil {
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not validate subtasks"})
+				}
+				if !canComplete {
+					return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cannot complete task: all subtasks must be done or cancelled"})
+				}
+			}
+
 			card.Status = *req.Status
 			now := time.Now()
 			card.StatusChangedAt = &now
@@ -433,6 +520,11 @@ func (h *CardHandler) CreateSubtask(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cannot create subtask of subtask"})
 	}
 
+	// Rule: Cannot create subtasks for finished or cancelled tasks
+	if parent.Status == models.StatusDone || parent.Status == models.StatusCancelled {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "cannot create subtasks for finished or cancelled tasks"})
+	}
+
 	// Parse request
 	var req createSubtaskRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -448,6 +540,7 @@ func (h *CardHandler) CreateSubtask(c *fiber.Ctx) error {
 	parentIDUint := uint(parentID)
 
 	subtask := models.Card{
+		ProjectID:       parent.ProjectID,
 		Title:           req.Title,
 		Description:     req.Description,
 		Status:          models.StatusBacklog,
@@ -455,6 +548,13 @@ func (h *CardHandler) CreateSubtask(c *fiber.Ctx) error {
 		ParentID:        &parentIDUint,
 		IsSubtask:       true,
 		CreatedByID:     &createdByID,
+		CreatedByName:    func() string {
+			var creator models.User
+			if err := h.DB.First(&creator, createdByID).Error; err == nil {
+				return creator.Name
+			}
+			return ""
+		}(),
 	}
 
 	if err := h.DB.Create(&subtask).Error; err != nil {

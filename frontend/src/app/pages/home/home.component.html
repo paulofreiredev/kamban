@@ -69,7 +69,7 @@
           <div class="card-header">
             <span class="card-title">
               {{ card.title }}
-              <span *ngIf="card.isSubtask" class="subtask-indicator" title="Subtarefa">📌</span>
+              <span *ngIf="card.isSubtask" class="subtask-label">subtarefa</span>
             </span>
             <span class="card-id">#{{ card.id }}</span>
           </div>
@@ -83,6 +83,7 @@
             <span *ngIf="getSubtaskProgress(card).total > 0" class="card-subtask-count">
               {{ getSubtaskProgress(card).done }}/{{ getSubtaskProgress(card).total }} ✓
             </span>
+            <span *ngIf="hasWarning(card)" class="card-warning-icon" title="Atividade tem justificativa ou foi cancelada">⚠️</span>
           </div>
         </div>
       </div>
@@ -154,12 +155,13 @@
     </div>
   </div>
 
-  <!-- Details Drawer -->
-  <div *ngIf="showDetailsDrawer()" class="drawer-backdrop" (click)="closeDetailsDrawer()">
-    <div class="drawer" (click)="$event.stopPropagation()">
-      <div class="drawer-header">
+  <!-- Unified Card Details/Edit Modal -->
+  <div *ngIf="showDetailsDrawer()" class="modal-backdrop" (click)="closeDetailsDrawer()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-header">
         <h2>{{ selectedCard()?.title }}</h2>
-        <div class="drawer-header-actions">
+        <div class="modal-header-actions">
+          <span *ngIf="selectedCard()?.isSubtask" class="subtask-badge-header">subtarefa</span>
           <button
             *ngIf="auth.isAdmin()"
             class="btn btn-danger btn-sm"
@@ -171,39 +173,55 @@
         </div>
       </div>
 
-      <div class="drawer-content">
+      <div class="modal-content card-details-modal">
         <div *ngIf="selectedCard()" class="card-details">
-          <!-- Card Info -->
+          <!-- Card Info Section -->
           <div class="details-section">
             <h3>Informações</h3>
-            <p><strong>ID:</strong> #{{ selectedCard()?.id }}</p>
-            <p><strong>Status:</strong> {{ selectedCard()?.status }}</p>
-            <p><strong>Descrição:</strong> {{ selectedCard()?.description }}</p>
-            <p><strong>Criado em:</strong> {{ selectedCard()?.createdAt | date : 'medium' }}</p>
-                        <p><strong>Criado por:</strong> {{ selectedCard()?.createdByName || 'N/A' }}</p>
-            <div class="assignee-editor">
-              <label for="assigneeSelect"><strong>Responsável:</strong></label>
-              <select
-                id="assigneeSelect"
-                class="form-input"
-                [(ngModel)]="detailAssigneeId"
-                [disabled]="savingAssignee()"
-              >
-                <option value="">Selecione um responsável</option>
-                <option *ngFor="let user of users()" [ngValue]="user.id">{{ user.name }}</option>
-              </select>
-              <button
-                class="btn btn-primary btn-sm"
-                type="button"
-                (click)="saveCardAssignee()"
-                [disabled]="detailAssigneeId === '' || savingAssignee()"
-              >
-                {{ savingAssignee() ? 'Salvando...' : 'Salvar responsável' }}
-              </button>
+            <div class="info-grid">
+              <p><strong>ID:</strong> #{{ selectedCard()?.id }}</p>
+              <p><strong>Status:</strong> {{ selectedCard()?.status }}</p>
+              <p><strong>Criado em:</strong> {{ selectedCard()?.createdAt | date : 'medium' }}</p>
+              <p><strong>Criado por:</strong> {{ selectedCard()?.createdByName || 'N/A' }}</p>
             </div>
-            <p *ngIf="selectedCard()?.justification">
-              <strong>Justificativa:</strong> {{ selectedCard()?.justification }}
-            </p>
+            
+            <div class="description-section">
+              <p><strong>Descrição:</strong></p>
+              <p class="description-text">{{ selectedCard()?.description }}</p>
+            </div>
+
+            <!-- Warning Icon - only for justification, cancellation, or regression -->
+            <div *ngIf="hasWarning(selectedCard())" class="warning-banner">
+              <span class="warning-icon">⚠️</span>
+              <div class="warning-content">
+                <p *ngIf="selectedCard()?.status === 'cancelled'" class="warning-text"><strong>Cancelado:</strong> Esta atividade foi cancelada.</p>
+                <p *ngIf="selectedCard()?.justification" class="warning-text"><strong>Justificativa:</strong> {{ selectedCard()?.justification }}</p>
+              </div>
+            </div>
+
+            <!-- Assignee Editor -->
+            <div class="assignee-section">
+              <label for="assigneeSelect"><strong>Responsável:</strong></label>
+              <div class="assignee-editor">
+                <select
+                  id="assigneeSelect"
+                  class="form-input"
+                  [(ngModel)]="detailAssigneeId"
+                  [disabled]="savingAssignee()"
+                >
+                  <option value="">Selecione um responsável</option>
+                  <option *ngFor="let user of users()" [ngValue]="user.id">{{ user.name }}</option>
+                </select>
+                <button
+                  class="btn btn-primary btn-sm"
+                  type="button"
+                  (click)="saveCardAssignee()"
+                  [disabled]="detailAssigneeId === '' || savingAssignee()"
+                >
+                  {{ savingAssignee() ? 'Salvando...' : 'Salvar' }}
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Subtasks Section -->
@@ -214,6 +232,11 @@
                 {{ getSubtaskProgress(selectedCard()).done }}/{{ getSubtaskProgress(selectedCard()).total }}
               </span>
             </h3>
+            
+            <div *ngIf="!canCreateSubtask()" class="warning-message">
+              ⚠️ Não é possível criar subtarefas para atividades finalizadas ou canceladas
+            </div>
+
             <div class="subtasks-list">
               <div *ngFor="let subtask of selectedCard()?.subtasks || []" class="subtask-item">
                 <input 
@@ -232,13 +255,13 @@
                 [(ngModel)]="newSubtaskTitle" 
                 placeholder="Nova subtarefa..." 
                 class="form-input"
-                [disabled]="creatingSubtask()"
+                [disabled]="!canCreateSubtask() || creatingSubtask()"
               />
               <button 
                 type="button" 
                 class="btn btn-primary btn-sm" 
                 (click)="createSubtask()"
-                [disabled]="!newSubtaskTitle().trim() || creatingSubtask()"
+                [disabled]="!newSubtaskTitle().trim() || creatingSubtask() || !canCreateSubtask()"
               >
                 {{ creatingSubtask() ? 'Criando...' : '+ Subtarefa' }}
               </button>

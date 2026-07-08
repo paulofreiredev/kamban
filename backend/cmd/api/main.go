@@ -55,7 +55,7 @@ func main() {
 		return c.JSON(claims)
 	})
 
-	protected.Get("/users", middleware.AdminOnly(), userHandler.List)
+	protected.Get("/users", userHandler.List)
 	protected.Post("/users", middleware.AdminOnly(), userHandler.Create)
 	protected.Put("/users/:id", userHandler.Update)
 	protected.Patch("/users/me/password", userHandler.ChangeMyPassword)

@@ -219,9 +219,10 @@ export class HomeComponent implements OnDestroy {
     if (assigneeId) payload.assigneeId = Number(assigneeId);
 
     this.api.createCard(payload).subscribe({
-      next: () => {
+      next: (card) => {
         this.closeNewCardModal();
-        this.reloadCards();
+        // Open the card details modal for subtask creation
+        this.openCard(card);
       }
     });
   }
@@ -243,6 +244,39 @@ export class HomeComponent implements OnDestroy {
 
     const card = event.previousContainer.data[event.previousIndex];
     if (!card) return;
+
+    // Check subtask validation rules
+    if (card.isSubtask) {
+      // Find parent to check if it's in progress
+      const parentCard = this.cards().find(c => c.id === card.parentId);
+      if (parentCard && parentCard.status !== 'in_progress') {
+        this.openConfirmDialog({
+          title: 'Não permitido',
+          message: 'Subtarefa só pode ser alterada se a atividade pai estiver em progresso',
+          confirmText: 'OK',
+          tone: 'primary',
+          action: () => {} // No-op
+        });
+        return;
+      }
+    }
+
+    // Check if trying to complete a parent task with incomplete subtasks
+    if (!card.isSubtask && card.subtasks && card.subtasks.length > 0) {
+      if (targetStatus === 'done' || targetStatus === 'cancelled') {
+        const incompleteTasks = card.subtasks.filter(st => st.status !== 'done' && st.status !== 'cancelled');
+        if (incompleteTasks.length > 0) {
+          this.openConfirmDialog({
+            title: 'Não permitido',
+            message: `Não é possível concluir: ${incompleteTasks.length} subtarefa(s) não está(estão) concluída(s) ou cancelada(s)`,
+            confirmText: 'OK',
+            tone: 'primary',
+            action: () => {} // No-op
+          });
+          return;
+        }
+      }
+    }
 
     if (this.isRegression(card.status, targetStatus) || this.isCancellation(targetStatus)) {
       this.pendingCardMove = { cardId: card.id, fromStatus: card.status, toStatus: targetStatus };
@@ -279,7 +313,19 @@ export class HomeComponent implements OnDestroy {
 
     this.api.updateCard(cardId, payload).subscribe({
       next: () => this.reloadCards(),
-      error: () => this.cards.set(previousCards)
+      error: (err) => {
+        // Restore previous state on error
+        this.cards.set(previousCards);
+        // Show error message from backend
+        const errorMsg = err?.error?.message || 'Não foi possível mover a atividade';
+        this.openConfirmDialog({
+          title: 'Erro ao mover atividade',
+          message: errorMsg,
+          confirmText: 'OK',
+          tone: 'primary',
+          action: () => {}
+        });
+      }
     });
   }
 
@@ -503,8 +549,16 @@ export class HomeComponent implements OnDestroy {
           this.newSubtaskTitle.set('');
           this.creatingSubtask.set(false);
         },
-        error: () => {
+        error: (err) => {
           this.creatingSubtask.set(false);
+          const errorMsg = err?.error?.message || 'Não foi possível criar a subtarefa';
+          this.openConfirmDialog({
+            title: 'Erro ao criar subtarefa',
+            message: errorMsg,
+            confirmText: 'OK',
+            tone: 'primary',
+            action: () => {}
+          });
         }
       });
   }
@@ -534,5 +588,59 @@ export class HomeComponent implements OnDestroy {
     }
     const done = card.subtasks.filter(st => st.status === 'done').length;
     return { done, total: card.subtasks.length };
+  }
+
+  hasWarning(card: Card | null): boolean {
+    if (!card) return false;
+    // Show warning if card is cancelled, or has justification
+    return card.status === 'cancelled' || !!card.justification;
+  }
+
+  canCreateSubtask(): boolean {
+    const card = this.selectedCard();
+    if (!card || card.isSubtask) return false;
+    // Cannot create subtasks for finished or cancelled tasks
+    return card.status !== 'done' && card.status !== 'cancelled';
+  }
+
+  canDragDropCard(card: Card): boolean {
+    // If this is a subtask, check if parent is in progress
+    if (card.isSubtask && card.parentId) {
+      // We need to find parent status - for now allow by default
+      // The backend will validate on drop
+      return true;
+    }
+    return true;
+  }
+
+  getSubtaskTransitionError(card: Card | null): string | null {
+    if (!card || !card.isSubtask) return null;
+    
+    // Find parent card to check its status
+    const allCards = this.cards();
+    const parentCard = allCards.find(c => c.id === card.parentId);
+    
+    if (!parentCard) return null;
+    
+    // Subtask can only be completed if parent is in progress
+    if (parentCard.status !== 'in_progress') {
+      return 'Subtarefa só pode ser alterada se a atividade pai estiver em progresso';
+    }
+    
+    return null;
+  }
+
+  getParentCompletionError(card: Card | null): string | null {
+    if (!card || card.isSubtask) return null;
+    
+    const subtasks = card.subtasks || [];
+    if (subtasks.length === 0) return null;
+    
+    const incompleteTasks = subtasks.filter(st => st.status !== 'done' && st.status !== 'cancelled');
+    if (incompleteTasks.length > 0) {
+      return `Não é possível concluir: ${incompleteTasks.length} subtarefa(s) não está(estão) concluída(s) ou cancelada(s)`;
+    }
+    
+    return null;
   }
 }

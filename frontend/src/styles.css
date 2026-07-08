@@ -31,6 +31,10 @@ button { background: #2456ff; color: #fff; border: none; }
 	width: min(92vw, 460px);
 }
 
+.modal-lg {
+	width: min(92vw, 900px);
+}
+
 .modal-header {
 	display: flex;
 	align-items: center;

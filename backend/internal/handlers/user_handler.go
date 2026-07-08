@@ -39,9 +39,7 @@ func (h *UserHandler) List(c *fiber.Ctx) error {
 	if claims == nil {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	if claims.Role != string(models.RoleAdmin) {
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "admin only"})
-	}
+	// All authenticated users can list users (not admin-only anymore)
 
 	var users []models.User
 	if err := h.DB.Order("name asc").Find(&users).Error; err != nil {
