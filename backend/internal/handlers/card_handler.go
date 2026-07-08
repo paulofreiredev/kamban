@@ -50,6 +50,22 @@ func canManageCardItem(claims *services.Claims, ownerID uint) bool {
 	return claims != nil && (claims.Role == "admin" || claims.UserID == ownerID)
 }
 
+func (h *CardHandler) collectCardTreeIDs(cardID uint) ([]uint, error) {
+	ids := []uint{cardID}
+	var subtasks []models.Card
+	if err := h.DB.Where("parent_id = ?", cardID).Find(&subtasks).Error; err != nil {
+		return nil, err
+	}
+	for _, subtask := range subtasks {
+		subIDs, err := h.collectCardTreeIDs(subtask.ID)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, subIDs...)
+	}
+	return ids, nil
+}
+
 func isValidStatus(s models.CardStatus) bool {
 	switch s {
 	case models.StatusBacklog, models.StatusTodo, models.StatusInProgress, models.StatusInReview, models.StatusDone, models.StatusCancelled:
@@ -485,18 +501,36 @@ func (h *CardHandler) Delete(c *fiber.Ctx) error {
 	if err := h.DB.First(&card, id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": "card not found"})
 	}
-	err := h.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("card_id = ?", card.ID).Delete(&models.Comment{}).Error; err != nil {
+	cardIDs, err := h.collectCardTreeIDs(card.ID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load subtasks for deletion"})
+	}
+
+	var attachments []models.Attachment
+	if err := h.DB.Where("card_id IN ?", cardIDs).Find(&attachments).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not load attachments for deletion"})
+	}
+
+	err = h.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("card_id IN ?", cardIDs).Delete(&models.Comment{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("card_id = ?", card.ID).Delete(&models.Attachment{}).Error; err != nil {
+		if err := tx.Where("card_id IN ?", cardIDs).Delete(&models.Attachment{}).Error; err != nil {
 			return err
 		}
-		return tx.Delete(&card).Error
+		if err := tx.Where("id IN ?", cardIDs).Delete(&models.Card{}).Error; err != nil {
+			return err
+		}
+		return nil
 	})
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "could not delete card"})
 	}
+
+	for _, attachment := range attachments {
+		_ = h.Storage.Delete(attachment.StoragePath)
+	}
+
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
