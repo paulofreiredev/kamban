@@ -71,7 +71,7 @@ export class ApiService {
   }
 
   addProjectMember(projectId: number, userId: number) {
-    return this.http.post<ProjectMember>(`${this.baseUrl}/projects/${projectId}/members`, { userId });
+    return this.http.post<ProjectMember>(`${this.baseUrl}/projects/${projectId}/members`, { "userId": +userId });
   }
 
   removeProjectMember(projectId: number, memberId: number) {
