@@ -230,6 +230,7 @@ export class HomeComponent implements OnDestroy {
         this.closeNewCardModal();
         // Open the card details modal for subtask creation
         this.openCard(card);
+        this.cards.update(items=>[...items, card]);
       }
     });
   }
