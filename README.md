@@ -269,3 +269,6 @@ Testes disponíveis:
 
 **Última atualização:** Julho 2026  
 **Versão:** MVP com Gerenciamento de Projetos
+
+## Aparencia do projeto
+!["HOME"](./docs/screenshots/home.png)
