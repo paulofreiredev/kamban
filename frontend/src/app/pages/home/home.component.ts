@@ -36,6 +36,8 @@ const statusOrder: Record<CardStatus, number> = {
 export class HomeComponent implements OnDestroy {
   columns = STATUS_COLUMNS;
   readonly dropListIds = STATUS_COLUMNS.map((column) => column.key);
+  public projectTitle: string | null;
+  private readonly projectTitleKey = 'kamban_selected_project_title';
   cards = signal<Card[]>([]);
   users = signal<User[]>([]);
   selectedCard = signal<Card | null>(null);
@@ -89,6 +91,7 @@ export class HomeComponent implements OnDestroy {
     private fb: FormBuilder,
     private router: Router
   ) {
+    this.projectTitle = this.loadProjectTitle();
     this.newCardForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(1)]],
       description: [''],
@@ -118,6 +121,10 @@ export class HomeComponent implements OnDestroy {
     const d = new Date();
     d.setDate(d.getDate() - days);
     return d;
+  }
+
+  private loadProjectTitle(): string | null {
+    return localStorage.getItem(this.projectTitleKey);
   }
 
   private toDateInput(d: Date) {
@@ -159,7 +166,7 @@ export class HomeComponent implements OnDestroy {
   }
 
   switchProject() {
-    this.auth.selectProject(0);
+    this.auth.selectProject(0, '');
     this.router.navigateByUrl('/projects/select');
   }
 

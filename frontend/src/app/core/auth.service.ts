@@ -9,6 +9,7 @@ export class AuthService {
   private readonly tokenKey = 'kamban_token';
   private readonly userKey = 'kamban_user';
   private readonly projectIdKey = 'kamban_selected_project_id';
+  private readonly projectTitleKey = 'kamban_selected_project_title';
 
   private _token = signal<string | null>(localStorage.getItem(this.tokenKey));
   private _user = signal<User | null>(this.loadUser());
@@ -36,9 +37,10 @@ export class AuthService {
     );
   }
 
-  selectProject(projectId: number) {
+  selectProject(projectId: number, projectTitle: string) {
     this._selectedProjectId.set(projectId);
     localStorage.setItem(this.projectIdKey, projectId.toString());
+    localStorage.setItem(this.projectTitleKey, projectTitle);
   }
 
   logout() {

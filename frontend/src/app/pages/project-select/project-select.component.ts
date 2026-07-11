@@ -54,7 +54,7 @@ export class ProjectSelectComponent implements OnInit, OnDestroy {
   }
 
   selectProject(project: Project): void {
-    this.authService.selectProject(project.id);
+    this.authService.selectProject(project.id, project.title);
     this.router.navigateByUrl('/');
   }
 
