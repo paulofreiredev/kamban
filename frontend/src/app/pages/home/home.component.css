@@ -8,6 +8,13 @@
   box-sizing: border-box;
 }
 
+#project-title {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #555;
+  padding: 0 16px;
+}
+
 .home-container {
   display: flex;
   flex-direction: column;
