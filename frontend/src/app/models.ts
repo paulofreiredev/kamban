@@ -73,6 +73,7 @@ export interface Card {
   subtasks?: Card[];
   comments?: Comment[];
   attachments?: Attachment[];
+  priority: number;
 }
 
 export interface LoginResponse {

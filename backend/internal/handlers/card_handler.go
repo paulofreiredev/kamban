@@ -9,8 +9,8 @@ import (
 
 	"kamban/backend/internal/middleware"
 	"kamban/backend/internal/models"
-	"kamban/backend/internal/storage"
 	"kamban/backend/internal/services"
+	"kamban/backend/internal/storage"
 
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
@@ -27,19 +27,20 @@ type createCardRequest struct {
 	Description string            `json:"description"`
 	Status      models.CardStatus `json:"status"`
 	AssigneeID  *uint             `json:"assigneeId"`
+	Priority    models.Priority   `json:"priority"`
 }
 
 type createSubtaskRequest struct {
-	Title      string `json:"title"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
 type updateCardRequest struct {
-	Title       *string            `json:"title"`
-	Description *string            `json:"description"`
-	Status      *models.CardStatus `json:"status"`
-	AssigneeID  *uint              `json:"assigneeId"`
-	Justification *string          `json:"justification"`
+	Title         *string            `json:"title"`
+	Description   *string            `json:"description"`
+	Status        *models.CardStatus `json:"status"`
+	AssigneeID    *uint              `json:"assigneeId"`
+	Justification *string            `json:"justification"`
 }
 
 type createCommentRequest struct {
@@ -141,7 +142,7 @@ func (h *CardHandler) List(c *fiber.Ctx) error {
 	toStr := c.Query("to")
 	assigneeIdStr := c.Query("assigneeId")
 	projectIDStr := c.Query("projectId")
-	
+
 	// projectId is required
 	if projectIDStr == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "projectId is required"})
@@ -172,7 +173,7 @@ func (h *CardHandler) List(c *fiber.Ctx) error {
 		Preload("CreatedBy").
 		Where("project_id = ?", projectIDStr).
 		Where("created_at BETWEEN ? AND ?", from, to)
-	
+
 	if assigneeIdStr != "" && assigneeIdStr != "0" {
 		query = query.Where("assignee_id = ?", assigneeIdStr)
 	}
@@ -210,12 +211,12 @@ func (h *CardHandler) Create(c *fiber.Ctx) error {
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid payload"})
 	}
-	
+
 	// Validate projectId
 	if req.ProjectID == 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "projectId is required"})
 	}
-	
+
 	// Verify user has access to project
 	var projectMember models.ProjectMember
 	if err := h.DB.
@@ -223,7 +224,7 @@ func (h *CardHandler) Create(c *fiber.Ctx) error {
 		First(&projectMember).Error; err != nil {
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"message": "you don't have access to this project"})
 	}
-	
+
 	if strings.TrimSpace(req.Title) == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "title is required"})
 	}
@@ -260,6 +261,7 @@ func (h *CardHandler) Create(c *fiber.Ctx) error {
 		Title:           req.Title,
 		Description:     req.Description,
 		Status:          req.Status,
+		Priority:        req.Priority,
 		StatusChangedAt: &now,
 		AssigneeID:      req.AssigneeID,
 		AssigneeName:    assigneeName,
@@ -304,7 +306,7 @@ func (h *CardHandler) Update(c *fiber.Ctx) error {
 		if card.Status != *req.Status {
 			// Check subtask transition rules
 			newStatus := *req.Status
-			
+
 			// Rule 1: If this is a subtask trying to transition to done/cancelled, parent must be in progress
 			if card.IsSubtask && (newStatus == models.StatusDone || newStatus == models.StatusCancelled) {
 				if card.ParentID != nil {
@@ -316,7 +318,7 @@ func (h *CardHandler) Update(c *fiber.Ctx) error {
 					}
 				}
 			}
-			
+
 			// Rule 2: If trying to move parent to done/cancelled, all subtasks must be done or cancelled
 			if !card.IsSubtask && (newStatus == models.StatusDone || newStatus == models.StatusCancelled) {
 				canComplete, err := h.canCompleteCard(card.ID)
@@ -582,7 +584,7 @@ func (h *CardHandler) CreateSubtask(c *fiber.Ctx) error {
 		ParentID:        &parentIDUint,
 		IsSubtask:       true,
 		CreatedByID:     &createdByID,
-		CreatedByName:    func() string {
+		CreatedByName: func() string {
 			var creator models.User
 			if err := h.DB.First(&creator, createdByID).Error; err == nil {
 				return creator.Name

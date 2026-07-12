@@ -3,10 +3,18 @@ package models
 import "time"
 
 type UserRole string
+type Priority uint8
 
 const (
 	RoleAdmin  UserRole = "admin"
 	RoleMember UserRole = "member"
+)
+
+const (
+	Basic  Priority = 4
+	Medium Priority = 3
+	High   Priority = 2
+	Urgent Priority = 1
 )
 
 type CardStatus string
@@ -32,16 +40,16 @@ type User struct {
 }
 
 type Project struct {
-	ID          uint           `gorm:"primaryKey" json:"id"`
-	Title       string         `gorm:"size:180;not null" json:"title"`
-	Description string         `gorm:"type:text" json:"description"`
-	OwnerID     uint           `gorm:"not null" json:"ownerId"`
-	Owner       *User          `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
-	IsActive    bool           `gorm:"not null;default:true" json:"isActive"`
-	CreatedAt   time.Time      `json:"createdAt"`
-	UpdatedAt   time.Time      `json:"updatedAt"`
+	ID          uint            `gorm:"primaryKey" json:"id"`
+	Title       string          `gorm:"size:180;not null" json:"title"`
+	Description string          `gorm:"type:text" json:"description"`
+	OwnerID     uint            `gorm:"not null" json:"ownerId"`
+	Owner       *User           `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
+	IsActive    bool            `gorm:"not null;default:true" json:"isActive"`
+	CreatedAt   time.Time       `json:"createdAt"`
+	UpdatedAt   time.Time       `json:"updatedAt"`
 	Members     []ProjectMember `json:"members,omitempty"`
-	Cards       []Card         `gorm:"foreignKey:ProjectID" json:"cards,omitempty"`
+	Cards       []Card          `gorm:"foreignKey:ProjectID" json:"cards,omitempty"`
 }
 
 type ProjectMember struct {
@@ -75,6 +83,7 @@ type Card struct {
 	Comments        []Comment    `json:"comments,omitempty"`
 	Attachments     []Attachment `json:"attachments,omitempty"`
 	Subtasks        []Card       `gorm:"foreignKey:ParentID" json:"subtasks,omitempty"`
+	Priority        Priority     `gorm:"not null;default:3" json:"priority"`
 }
 
 type Comment struct {

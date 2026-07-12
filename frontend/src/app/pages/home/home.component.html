@@ -50,27 +50,16 @@
         <span class="card-count">{{ grouped()[column.key].length }}</span>
       </div>
 
-      <div
-        cdkDropList
-        [id]="column.key"
-        [cdkDropListConnectedTo]="dropListIds"
-        [cdkDropListData]="grouped()[column.key]"
-        class="card-list"
-        (cdkDropListDropped)="onCardDrop($event, column.key)"
-        cdkDropListSortingDisabled
-      >
-        <div
-          *ngFor="let card of grouped()[column.key]"
-          class="card"
-          (click)="onCardClick(card)"
-          (cdkDragStarted)="onDragStarted()"
-          (cdkDragEnded)="onDragEnded()"
-          cdkDrag
-        >
+      <div cdkDropList [id]="column.key" [cdkDropListConnectedTo]="dropListIds"
+        [cdkDropListData]="grouped()[column.key]" class="card-list"
+        (cdkDropListDropped)="onCardDrop($event, column.key)" cdkDropListSortingDisabled>
+        <div *ngFor="let card of grouped()[column.key]" class="card" (click)="onCardClick(card)"
+          (cdkDragStarted)="onDragStarted()" (cdkDragEnded)="onDragEnded()" cdkDrag>
           <div class="card-header">
             <span class="card-title">
               {{ card.title }}
               <span *ngIf="card.isSubtask" class="subtask-label">subtarefa</span>
+              <span class="subtask-label">{{getPriority(card)}}</span>
             </span>
             <span class="card-id">#{{ card.id }}</span>
           </div>
@@ -84,7 +73,8 @@
             <span *ngIf="getSubtaskProgress(card).total > 0" class="card-subtask-count">
               {{ getSubtaskProgress(card).done }}/{{ getSubtaskProgress(card).total }} ✓
             </span>
-            <span *ngIf="hasWarning(card)" class="card-warning-icon" title="Atividade tem justificativa ou foi cancelada">⚠️</span>
+            <span *ngIf="hasWarning(card)" class="card-warning-icon"
+              title="Atividade tem justificativa ou foi cancelada">⚠️</span>
           </div>
         </div>
       </div>
@@ -106,7 +96,19 @@
             Título é obrigatório
           </span>
         </div>
+        <div class="form-group">
+          <label>Prioridade *</label>
+          <select formControlName="priority" class="form-input">
+            <option [ngValue]="4">BAIXO</option>
+            <option [ngValue]="3">MÉDIO</option>
+            <option [ngValue]="2">ALTO</option>
+            <option [ngValue]="1">URGENTE</option>
+          </select>
 
+          <span class="error" *ngIf="newCardForm.get('priority')?.invalid && newCardForm.get('priority')?.touched">
+            Prioridade é obrigatória
+          </span>
+        </div>
         <div class="form-group">
           <label>Descrição</label>
           <textarea formControlName="description" class="form-input" rows="4"></textarea>
@@ -142,8 +144,10 @@
 
         <div class="form-group">
           <label>Justificativa *</label>
-          <textarea formControlName="justification" class="form-input" rows="4" placeholder="Digite sua justificativa..."></textarea>
-          <span class="error" *ngIf="justificationForm.get('justification')?.invalid && justificationForm.get('justification')?.touched">
+          <textarea formControlName="justification" class="form-input" rows="4"
+            placeholder="Digite sua justificativa..."></textarea>
+          <span class="error"
+            *ngIf="justificationForm.get('justification')?.invalid && justificationForm.get('justification')?.touched">
             Justificativa é obrigatória
           </span>
         </div>
@@ -163,13 +167,8 @@
         <h2>{{ selectedCard()?.title }}</h2>
         <div class="modal-header-actions">
           <span *ngIf="selectedCard()?.isSubtask" class="subtask-badge-header">subtarefa</span>
-          <button
-            *ngIf="auth.isAdmin()"
-            class="btn btn-danger btn-sm"
-            type="button"
-            (click)="deleteSelectedCard()"
-            title="Excluir card"
-          >🗑 Excluir</button>
+          <button *ngIf="auth.isAdmin()" class="btn btn-danger btn-sm" type="button" (click)="deleteSelectedCard()"
+            title="Excluir card">🗑 Excluir</button>
           <button class="btn-close" (click)="closeDetailsDrawer()">×</button>
         </div>
       </div>
@@ -185,7 +184,7 @@
               <p><strong>Criado em:</strong> {{ selectedCard()?.createdAt | date : 'medium' }}</p>
               <p><strong>Criado por:</strong> {{ selectedCard()?.createdByName || 'N/A' }}</p>
             </div>
-            
+
             <div class="description-section">
               <p><strong>Descrição:</strong></p>
               <p class="description-text">{{ selectedCard()?.description }}</p>
@@ -195,8 +194,10 @@
             <div *ngIf="hasWarning(selectedCard())" class="warning-banner">
               <span class="warning-icon">⚠️</span>
               <div class="warning-content">
-                <p *ngIf="selectedCard()?.status === 'cancelled'" class="warning-text"><strong>Cancelado:</strong> Esta atividade foi cancelada.</p>
-                <p *ngIf="selectedCard()?.justification" class="warning-text"><strong>Justificativa:</strong> {{ selectedCard()?.justification }}</p>
+                <p *ngIf="selectedCard()?.status === 'cancelled'" class="warning-text"><strong>Cancelado:</strong> Esta
+                  atividade foi cancelada.</p>
+                <p *ngIf="selectedCard()?.justification" class="warning-text"><strong>Justificativa:</strong> {{
+                  selectedCard()?.justification }}</p>
               </div>
             </div>
 
@@ -204,21 +205,13 @@
             <div class="assignee-section">
               <label for="assigneeSelect"><strong>Responsável:</strong></label>
               <div class="assignee-editor">
-                <select
-                  id="assigneeSelect"
-                  class="form-input"
-                  [(ngModel)]="detailAssigneeId"
-                  [disabled]="savingAssignee()"
-                >
+                <select id="assigneeSelect" class="form-input" [(ngModel)]="detailAssigneeId"
+                  [disabled]="savingAssignee()">
                   <option value="">Selecione um responsável</option>
                   <option *ngFor="let user of users()" [ngValue]="user.id">{{ user.name }}</option>
                 </select>
-                <button
-                  class="btn btn-primary btn-sm"
-                  type="button"
-                  (click)="saveCardAssignee()"
-                  [disabled]="detailAssigneeId === '' || savingAssignee()"
-                >
+                <button class="btn btn-primary btn-sm" type="button" (click)="saveCardAssignee()"
+                  [disabled]="detailAssigneeId === '' || savingAssignee()">
                   {{ savingAssignee() ? 'Salvando...' : 'Salvar' }}
                 </button>
               </div>
@@ -233,37 +226,24 @@
                 {{ getSubtaskProgress(selectedCard()).done }}/{{ getSubtaskProgress(selectedCard()).total }}
               </span>
             </h3>
-            
+
             <div *ngIf="!canCreateSubtask()" class="warning-message">
               ⚠️ Não é possível criar subtarefas para atividades finalizadas ou canceladas
             </div>
 
             <div class="subtasks-list">
               <div *ngFor="let subtask of selectedCard()?.subtasks || []" class="subtask-item">
-                <input 
-                  type="checkbox" 
-                  [checked]="subtask.status === 'done'" 
-                  (change)="updateSubtaskStatus(subtask.id, $event)"
-                  [disabled]="creatingSubtask()"
-                />
+                <input type="checkbox" [checked]="subtask.status === 'done'"
+                  (change)="updateSubtaskStatus(subtask.id, $event)" [disabled]="creatingSubtask()" />
                 <span [class.subtask-done]="subtask.status === 'done'">{{ subtask.title }}</span>
               </div>
             </div>
 
             <div class="subtask-form">
-              <input 
-                type="text" 
-                [(ngModel)]="newSubtaskTitle" 
-                placeholder="Nova subtarefa..." 
-                class="form-input"
-                [disabled]="!canCreateSubtask() || creatingSubtask()"
-              />
-              <button 
-                type="button" 
-                class="btn btn-primary btn-sm" 
-                (click)="createSubtask()"
-                [disabled]="!newSubtaskTitle().trim() || creatingSubtask() || !canCreateSubtask()"
-              >
+              <input type="text" [(ngModel)]="newSubtaskTitle" placeholder="Nova subtarefa..." class="form-input"
+                [disabled]="!canCreateSubtask() || creatingSubtask()" />
+              <button type="button" class="btn btn-primary btn-sm" (click)="createSubtask()"
+                [disabled]="!newSubtaskTitle().trim() || creatingSubtask() || !canCreateSubtask()">
                 {{ creatingSubtask() ? 'Criando...' : '+ Subtarefa' }}
               </button>
             </div>
@@ -276,7 +256,8 @@
               <div *ngFor="let comment of selectedCard()?.comments" class="comment">
                 <div class="comment-header">
                   <strong>{{ comment.author?.name || 'Usuário' }}:</strong>
-                  <button *ngIf="canDeleteComment(comment)" type="button" class="btn btn-danger btn-xs" (click)="deleteComment(comment.id)">Excluir</button>
+                  <button *ngIf="canDeleteComment(comment)" type="button" class="btn btn-danger btn-xs"
+                    (click)="deleteComment(comment.id)">Excluir</button>
                 </div>
                 <div>{{ comment.content }}</div>
                 <small>{{ comment.createdAt | date : 'short' }}</small>
@@ -284,7 +265,8 @@
             </div>
 
             <div class="comment-form">
-              <textarea [(ngModel)]="newComment" placeholder="Adicionar comentário..." class="form-input" rows="2"></textarea>
+              <textarea [(ngModel)]="newComment" placeholder="Adicionar comentário..." class="form-input"
+                rows="2"></textarea>
               <button class="btn btn-primary btn-sm" (click)="addComment()">Comentar</button>
             </div>
           </div>
@@ -294,10 +276,12 @@
             <h3>Anexos</h3>
             <div class="attachments-list">
               <div *ngFor="let att of selectedCard()?.attachments" class="attachment-item">
-                <a [href]="api.getAttachmentUrl(att.url)" target="_blank" rel="noopener noreferrer" class="attachment" download>
+                <a [href]="api.getAttachmentUrl(att.url)" target="_blank" rel="noopener noreferrer" class="attachment"
+                  download>
                   📎 {{ att.originalName }}
                 </a>
-                <button *ngIf="canDeleteAttachment(att)" type="button" class="btn btn-danger btn-xs" (click)="deleteAttachment(att.id)">Excluir</button>
+                <button *ngIf="canDeleteAttachment(att)" type="button" class="btn btn-danger btn-xs"
+                  (click)="deleteAttachment(att.id)">Excluir</button>
               </div>
             </div>
             <div class="attachment-form">
@@ -340,14 +324,8 @@
     </div>
   </div>
 
-  <app-confirm-dialog
-    [visible]="!!confirmDialog()"
-    [title]="confirmDialog()?.title || ''"
-    [message]="confirmDialog()?.message || ''"
-    [description]="confirmDialog()?.description || ''"
-    [confirmText]="confirmDialog()?.confirmText || 'Confirmar'"
-    [tone]="confirmDialog()?.tone || 'primary'"
-    (confirmed)="confirmCurrentAction()"
-    (cancelled)="closeConfirmDialog()"
-  />
+  <app-confirm-dialog [visible]="!!confirmDialog()" [title]="confirmDialog()?.title || ''"
+    [message]="confirmDialog()?.message || ''" [description]="confirmDialog()?.description || ''"
+    [confirmText]="confirmDialog()?.confirmText || 'Confirmar'" [tone]="confirmDialog()?.tone || 'primary'"
+    (confirmed)="confirmCurrentAction()" (cancelled)="closeConfirmDialog()" />
 </div>

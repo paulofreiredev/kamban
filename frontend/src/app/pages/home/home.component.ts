@@ -94,6 +94,7 @@ export class HomeComponent implements OnDestroy {
     this.projectTitle = this.loadProjectTitle();
     this.newCardForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(1)]],
+      priority: [4, Validators.required],
       description: [''],
       assigneeId: ['']
     });
@@ -149,7 +150,7 @@ export class HomeComponent implements OnDestroy {
     }
     this.api.listCards(projectId, params.from, params.to, params.assigneeId).subscribe({
       next: (cards) => {
-        this.cards.set(cards);
+        this.cards.set(cards.sort((a,b)=>  a.priority - b.priority));
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -220,7 +221,8 @@ export class HomeComponent implements OnDestroy {
       projectId,
       title: this.newCardForm.get('title')?.value,
       description: this.newCardForm.get('description')?.value || '',
-      status: 'backlog'
+      status: 'backlog', 
+      priority: this.newCardForm.get('priority')?.value
     };
     const assigneeId = this.newCardForm.get('assigneeId')?.value;
     if (assigneeId) payload.assigneeId = Number(assigneeId);
@@ -651,4 +653,26 @@ export class HomeComponent implements OnDestroy {
     
     return null;
   }
+
+  getPriority(card: Card){
+    let priority: string;
+    switch(card.priority){
+      case 1:
+        priority =  "URGENTE";
+        break;
+      case 2:
+        priority = "ALTA";
+        break;
+      case 3:
+        priority = "MEDIO";
+        break;
+      case 4: 
+        priority = "BAIXA"
+        break;
+      default:
+        priority = "MEDIA";
+    }
+    return priority;
+  }
+
 }
