@@ -33,7 +33,7 @@ func (h *ProjectHandler) GetUserProjects(c *fiber.Ctx) error {
 	if role == "admin" {
 		// Admin vê todos os projetos
 		if err := h.db.
-			Preload("Members").
+			Preload("Members.User").
 			Preload("Owner").
 			Order("created_at DESC").
 			Find(&projects).Error; err != nil {
@@ -310,9 +310,9 @@ func (h *ProjectHandler) AddProjectMember(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusCreated).JSON(fiber.Map{
-		"id":       member.ID,
-		"userId":   member.UserID,
-		"userName": member.User.Name,
+		"id":        member.ID,
+		"userId":    member.UserID,
+		"userName":  member.User.Name,
 		"userEmail": member.User.Email,
 		"createdAt": member.CreatedAt,
 	})
